@@ -73,13 +73,11 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByMicrosoftId(microsoftId);
     }
 
-    @Override
     public Optional<User> findActiveByEmail(String email) {
         logger.debug("Finding active user by email: {}", email);
         return userRepository.findByEmailAndIsActiveTrue(email);
     }
 
-    @Override
     public Optional<User> findActiveByMicrosoftId(String microsoftId) {
         logger.debug("Finding active user by Microsoft ID: {}", microsoftId);
         return userRepository.findByMicrosoftIdAndIsActiveTrue(microsoftId);
@@ -188,7 +186,6 @@ public class UserServiceImpl implements UserService {
         return savedUser;
     }
 
-    @Override
     public void deleteUser(UUID userId) {
         logger.info("Soft deleting user: {}", userId);
         deactivateUser(userId);

@@ -1,1 +1,5 @@
 .idea
+
+fundquest-auth-frontend/node_modules
+fundquest-auth-frontend/package-lock.json
+fundquest-auth-frontend/package.json

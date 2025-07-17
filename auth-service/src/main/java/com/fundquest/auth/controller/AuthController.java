@@ -43,6 +43,7 @@ public class AuthController {
             HttpServletResponse response) {
 
         // Authenticate user with Microsoft ID token
+        System.out.println("Request here!");
         AuthResponse authResponse = authFacade.authenticateWithMicrosoft(request);
 
         // Generate refresh token
