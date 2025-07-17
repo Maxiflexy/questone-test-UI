@@ -47,9 +47,8 @@ public class AuthServiceImpl implements AuthService {
             // Step 2: Create or update user
             User user = userService.createOrUpdateUser(microsoftUserInfo);
 
-            // Step 3: Generate FundQuest tokens
+            // Step 3: Generate access token
             String accessToken = jwtService.generateAccessToken(user);
-            String refreshToken = jwtService.generateRefreshToken(user);
 
             // Step 4: Convert user to response DTO
             UserResponse userResponse = userService.convertToUserResponse(user);

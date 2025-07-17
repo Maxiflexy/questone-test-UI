@@ -91,4 +91,32 @@ public class User {
         this.name = name;
         this.microsoftId = microsoftId;
     }
+
+    public void incrementLoginCount() {
+        this.loginCount = (this.loginCount == null ? 0L : this.loginCount) + 1;
+    }
+
+    public boolean isActive() {
+        return Boolean.TRUE.equals(this.isActive);
+    }
+
+    public boolean isEmailVerified() {
+        return Boolean.TRUE.equals(this.isEmailVerified);
+    }
+
+    public void updateLastLogin() {
+        this.lastLogin = LocalDateTime.now();
+    }
+
+    public void activate() {
+        this.isActive = true;
+    }
+
+    public void deactivate() {
+        this.isActive = false;
+    }
+
+    public void verifyEmail() {
+        this.isEmailVerified = true;
+    }
 }

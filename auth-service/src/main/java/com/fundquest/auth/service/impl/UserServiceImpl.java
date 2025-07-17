@@ -4,6 +4,8 @@ import com.fundquest.auth.dto.response.UserResponse;
 import com.fundquest.auth.entity.User;
 import com.fundquest.auth.repository.UserRepository;
 import com.fundquest.auth.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,9 +15,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Implementation of UserService interface
+ * Handles user management operations
+ */
 @Service
 @Transactional
 public class UserServiceImpl implements UserService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private final UserRepository userRepository;
 
@@ -24,187 +32,128 @@ public class UserServiceImpl implements UserService {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Create or update user from Microsoft token information
-     */
+    @Override
     public User createOrUpdateUser(Map<String, Object> microsoftUserInfo) {
+        logger.debug("Creating or updating user with Microsoft info: {}", microsoftUserInfo.get("email"));
+
         String email = (String) microsoftUserInfo.get("email");
         String microsoftId = (String) microsoftUserInfo.get("microsoftId");
         String name = (String) microsoftUserInfo.get("name");
 
         // Validate required fields
-        if (email == null || microsoftId == null || name == null) {
-            throw new IllegalArgumentException("Email, Microsoft ID, and name are required");
-        }
+        validateRequiredFields(email, microsoftId, name);
 
         // Check if user already exists by email or Microsoft ID
         Optional<User> existingUser = userRepository.findByEmailOrMicrosoftId(email, microsoftId);
 
         if (existingUser.isPresent()) {
-            // Update existing user
-            User user = existingUser.get();
-            updateUserFromMicrosoftInfo(user, microsoftUserInfo);
-            user.incrementLoginCount();
-            user.setUpdatedBy("SYSTEM");
-            return userRepository.save(user);
+            logger.info("Updating existing user: {}", email);
+            return updateExistingUser(existingUser.get(), microsoftUserInfo);
         } else {
-            // Create new user
-            User user = createUserFromMicrosoftInfo(microsoftUserInfo);
-            user.setCreatedBy("SYSTEM");
-            user.setUpdatedBy("SYSTEM");
-            user.incrementLoginCount();
-            return userRepository.save(user);
+            logger.info("Creating new user: {}", email);
+            return createNewUser(microsoftUserInfo);
         }
     }
 
-    /**
-     * Create new user from Microsoft information
-     */
-    private User createUserFromMicrosoftInfo(Map<String, Object> microsoftUserInfo) {
-        User user = new User();
-
-        // Required fields
-        user.setEmail((String) microsoftUserInfo.get("email"));
-        user.setMicrosoftId((String) microsoftUserInfo.get("microsoftId"));
-        user.setName((String) microsoftUserInfo.get("name"));
-
-        // Optional fields
-        user.setGivenName((String) microsoftUserInfo.get("givenName"));
-        user.setFamilyName((String) microsoftUserInfo.get("familyName"));
-        user.setPreferredUsername((String) microsoftUserInfo.get("preferredUsername"));
-        user.setJobTitle((String) microsoftUserInfo.get("jobTitle"));
-        user.setDepartment((String) microsoftUserInfo.get("department"));
-        user.setOfficeLocation((String) microsoftUserInfo.get("officeLocation"));
-        user.setMobilePhone((String) microsoftUserInfo.get("mobilePhone"));
-        user.setBusinessPhones((String) microsoftUserInfo.get("businessPhones"));
-
-        // Default values
-        user.setIsActive(true);
-        user.setIsEmailVerified(true); // Assuming Microsoft verified email
-        user.setLoginCount(0L);
-
-        return user;
-    }
-
-    /**
-     * Update existing user from Microsoft information
-     */
-    private void updateUserFromMicrosoftInfo(User user, Map<String, Object> microsoftUserInfo) {
-        // Update fields that might have changed
-        user.setName((String) microsoftUserInfo.get("name"));
-        user.setGivenName((String) microsoftUserInfo.get("givenName"));
-        user.setFamilyName((String) microsoftUserInfo.get("familyName"));
-        user.setPreferredUsername((String) microsoftUserInfo.get("preferredUsername"));
-        user.setJobTitle((String) microsoftUserInfo.get("jobTitle"));
-        user.setDepartment((String) microsoftUserInfo.get("department"));
-        user.setOfficeLocation((String) microsoftUserInfo.get("officeLocation"));
-        user.setMobilePhone((String) microsoftUserInfo.get("mobilePhone"));
-        user.setBusinessPhones((String) microsoftUserInfo.get("businessPhones"));
-
-        // Ensure user is active and email is verified
-        user.setIsActive(true);
-        user.setIsEmailVerified(true);
-    }
-
-    /**
-     * Find user by ID
-     */
+    @Override
     public Optional<User> findById(UUID id) {
+        logger.debug("Finding user by ID: {}", id);
         return userRepository.findById(id);
     }
 
-    /**
-     * Find user by email
-     */
+    @Override
     public Optional<User> findByEmail(String email) {
-        return Optional.ofNullable(userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found")));
+        logger.debug("Finding user by email: {}", email);
+        return userRepository.findByEmail(email);
     }
 
-    /**
-     * Find user by Microsoft ID
-     */
+    @Override
     public Optional<User> findByMicrosoftId(String microsoftId) {
+        logger.debug("Finding user by Microsoft ID: {}", microsoftId);
         return userRepository.findByMicrosoftId(microsoftId);
     }
 
-    /**
-     * Find active user by email
-     */
+    @Override
     public Optional<User> findActiveByEmail(String email) {
+        logger.debug("Finding active user by email: {}", email);
         return userRepository.findByEmailAndIsActiveTrue(email);
     }
 
-    /**
-     * Find active user by Microsoft ID
-     */
+    @Override
     public Optional<User> findActiveByMicrosoftId(String microsoftId) {
+        logger.debug("Finding active user by Microsoft ID: {}", microsoftId);
         return userRepository.findByMicrosoftIdAndIsActiveTrue(microsoftId);
     }
 
-    /**
-     * Update user's last login
-     */
+    @Override
     public void updateLastLogin(UUID userId) {
+        logger.debug("Updating last login for user: {}", userId);
+
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            user.setLastLogin(LocalDateTime.now());
-            user.incrementLoginCount();
+            user.updateLastLogin();
             userRepository.save(user);
+            logger.info("Updated last login for user: {}", user.getEmail());
+        } else {
+            logger.warn("User not found for last login update: {}", userId);
         }
     }
 
-    /**
-     * Deactivate user
-     */
+    @Override
     public void deactivateUser(UUID userId) {
+        logger.info("Deactivating user: {}", userId);
+
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             user.setIsActive(false);
             user.setUpdatedBy("SYSTEM");
             userRepository.save(user);
+            logger.info("Deactivated user: {}", user.getEmail());
+        } else {
+            logger.warn("User not found for deactivation: {}", userId);
         }
     }
 
-    /**
-     * Activate user
-     */
+    @Override
     public void activateUser(UUID userId) {
+        logger.info("Activating user: {}", userId);
+
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             user.setIsActive(true);
             user.setUpdatedBy("SYSTEM");
             userRepository.save(user);
+            logger.info("Activated user: {}", user.getEmail());
+        } else {
+            logger.warn("User not found for activation: {}", userId);
         }
     }
 
-    /**
-     * Check if user exists by email
-     */
+    @Override
     public boolean existsByEmail(String email) {
+        logger.debug("Checking if user exists by email: {}", email);
         return userRepository.existsByEmail(email);
     }
 
-    /**
-     * Check if user exists by Microsoft ID
-     */
+    @Override
     public boolean existsByMicrosoftId(String microsoftId) {
+        logger.debug("Checking if user exists by Microsoft ID: {}", microsoftId);
         return userRepository.existsByMicrosoftId(microsoftId);
     }
 
-    /**
-     * Get total active users count
-     */
+    @Override
     public long getActiveUsersCount() {
+        logger.debug("Getting active users count");
         return userRepository.countByIsActiveTrue();
     }
 
-    /**
-     * Convert User entity to UserResponse DTO
-     */
+    @Override
     public UserResponse convertToUserResponse(User user) {
+        logger.debug("Converting user to response DTO: {}", user.getEmail());
+
         UserResponse response = new UserResponse();
         response.setId(user.getId());
         response.setEmail(user.getEmail());
@@ -216,21 +165,114 @@ public class UserServiceImpl implements UserService {
         response.setDepartment(user.getDepartment());
         response.setCreatedAt(user.getCreatedAt());
         response.setLastLogin(user.getLastLogin());
+
         return response;
     }
 
-    /**
-     * Update user profile
-     */
+    @Override
     public User updateUserProfile(UUID userId, Map<String, Object> updates) {
+        logger.info("Updating user profile: {}", userId);
+
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
             throw new IllegalArgumentException("User not found with ID: " + userId);
         }
 
         User user = userOpt.get();
+        applyProfileUpdates(user, updates);
+        user.setUpdatedBy("SYSTEM");
 
-        // Update allowed fields
+        User savedUser = userRepository.save(user);
+        logger.info("Updated profile for user: {}", savedUser.getEmail());
+
+        return savedUser;
+    }
+
+    @Override
+    public void deleteUser(UUID userId) {
+        logger.info("Soft deleting user: {}", userId);
+        deactivateUser(userId);
+    }
+
+    /**
+     * Validate required fields for user creation
+     */
+    private void validateRequiredFields(String email, String microsoftId, String name) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        if (microsoftId == null || microsoftId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Microsoft ID is required");
+        }
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Name is required");
+        }
+    }
+
+    /**
+     * Create new user from Microsoft information
+     */
+    private User createNewUser(Map<String, Object> microsoftUserInfo) {
+        User user = new User();
+
+        // Set required fields
+        user.setEmail((String) microsoftUserInfo.get("email"));
+        user.setMicrosoftId((String) microsoftUserInfo.get("microsoftId"));
+        user.setName((String) microsoftUserInfo.get("name"));
+
+        // Set optional fields
+        setOptionalFields(user, microsoftUserInfo);
+
+        // Set default values
+        user.setIsActive(true);
+        user.setIsEmailVerified(true); // Assuming Microsoft verified email
+        user.setLoginCount(0L);
+        user.setCreatedBy("SYSTEM");
+        user.setUpdatedBy("SYSTEM");
+
+        // Increment login count for first login
+        user.incrementLoginCount();
+
+        return userRepository.save(user);
+    }
+
+    /**
+     * Update existing user from Microsoft information
+     */
+    private User updateExistingUser(User user, Map<String, Object> microsoftUserInfo) {
+        // Update fields that might have changed
+        user.setName((String) microsoftUserInfo.get("name"));
+        setOptionalFields(user, microsoftUserInfo);
+
+        // Ensure user is active and email is verified
+        user.setIsActive(true);
+        user.setIsEmailVerified(true);
+        user.setUpdatedBy("SYSTEM");
+
+        // Increment login count
+        user.incrementLoginCount();
+
+        return userRepository.save(user);
+    }
+
+    /**
+     * Set optional fields from Microsoft information
+     */
+    private void setOptionalFields(User user, Map<String, Object> microsoftUserInfo) {
+        user.setGivenName((String) microsoftUserInfo.get("givenName"));
+        user.setFamilyName((String) microsoftUserInfo.get("familyName"));
+        user.setPreferredUsername((String) microsoftUserInfo.get("preferredUsername"));
+        user.setJobTitle((String) microsoftUserInfo.get("jobTitle"));
+        user.setDepartment((String) microsoftUserInfo.get("department"));
+        user.setOfficeLocation((String) microsoftUserInfo.get("officeLocation"));
+        user.setMobilePhone((String) microsoftUserInfo.get("mobilePhone"));
+        user.setBusinessPhones((String) microsoftUserInfo.get("businessPhones"));
+    }
+
+    /**
+     * Apply profile updates to user
+     */
+    private void applyProfileUpdates(User user, Map<String, Object> updates) {
         if (updates.containsKey("name")) {
             user.setName((String) updates.get("name"));
         }
@@ -249,16 +291,5 @@ public class UserServiceImpl implements UserService {
         if (updates.containsKey("businessPhones")) {
             user.setBusinessPhones((String) updates.get("businessPhones"));
         }
-
-        user.setUpdatedBy("SYSTEM");
-
-        return userRepository.save(user);
-    }
-
-    /**
-     * Delete user (soft delete by deactivating)
-     */
-    public void deleteUser(UUID userId) {
-        deactivateUser(userId);
     }
 }

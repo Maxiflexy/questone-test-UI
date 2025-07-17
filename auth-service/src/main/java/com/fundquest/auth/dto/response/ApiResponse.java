@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -24,26 +23,48 @@ public class ApiResponse<T> {
         this();
         this.success = success;
         this.data = data;
+        this.timestamp = LocalDateTime.now();
     }
 
     public ApiResponse(boolean success, String message) {
         this();
         this.success = success;
         this.message = message;
+        this.timestamp = LocalDateTime.now();
     }
 
     public ApiResponse(boolean success, ErrorResponse error) {
         this();
         this.success = success;
         this.error = error;
+        this.timestamp = LocalDateTime.now();
     }
 
     public static <T> ApiResponse<T> success(T data) {
         return new ApiResponse<>(true, data);
     }
 
-    public static ApiResponse<String> success(String message) {
-        return new ApiResponse<>(true, message);
+    public static <T> ApiResponse<T> success(String message) {
+        ApiResponse<T> response = new ApiResponse<>();
+        response.setSuccess(true);
+        response.setMessage(message);
+        response.setTimestamp(LocalDateTime.now());
+        return response;
+    }
+
+    public static ApiResponse<Void> successVoid(String message) {
+        ApiResponse<Void> response = new ApiResponse<>();
+        response.setSuccess(true);
+        response.setMessage(message);
+        response.setTimestamp(LocalDateTime.now());
+        return response;
+    }
+
+    public static ApiResponse<Void> successVoid() {
+        ApiResponse<Void> response = new ApiResponse<>();
+        response.setSuccess(true);
+        response.setTimestamp(LocalDateTime.now());
+        return response;
     }
 
     public static <T> ApiResponse<T> error(ErrorResponse error) {

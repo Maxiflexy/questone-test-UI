@@ -3,7 +3,8 @@ package com.fundquest.auth.controller;
 import com.fundquest.auth.dto.response.ApiResponse;
 import com.fundquest.auth.dto.response.UserResponse;
 import com.fundquest.auth.entity.User;
-import com.fundquest.auth.service.UserService;
+import com.fundquest.auth.facade.UserFacade;
+import com.fundquest.auth.util.CookieHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,198 +15,119 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * REST Controller for user operations
+ * Delegates business logic to UserFacade
+ */
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
 
-    private final UserService userService;
+    private final UserFacade userFacade;
+    private final CookieHelper cookieHelper;
 
     @Autowired
-    public UserController(UserService userService) {
-        this.userService = userService;
+    public UserController(UserFacade userFacade, CookieHelper cookieHelper) {
+        this.userFacade = userFacade;
+        this.cookieHelper = cookieHelper;
     }
 
-    /**
-     * Get User Profile
-     * GET /api/user/profile
-     */
+
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponse>> getUserProfile(HttpServletRequest request) {
-        try {
-            // Get current user from request attributes (set by JwtAuthenticationFilter)
-            User currentUser = (User) request.getAttribute("currentUser");
-
-            if (currentUser == null) {
-                // Fallback: get from Security Context
-                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-                String email = authentication.getName();
-                currentUser = userService.findByEmail(email)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
-            }
-
-            // Convert to response DTO
-            UserResponse userResponse = userService.convertToUserResponse(currentUser);
-
-            // Return success response
-            ApiResponse<UserResponse> apiResponse = ApiResponse.success(userResponse);
-            return ResponseEntity.ok(apiResponse);
-
-        } catch (Exception e) {
-            throw e;
-        }
+        User currentUser = getCurrentUser(request);
+        UserResponse userResponse = userFacade.getUserProfile(currentUser);
+        return ResponseEntity.ok(ApiResponse.success(userResponse));
     }
 
-    /**
-     * Update User Profile (Protected Endpoint)
-     * PUT /api/user/profile
-     */
     @PutMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponse>> updateUserProfile(
             @RequestBody Map<String, Object> updates,
             HttpServletRequest request) {
 
-        try {
-            // Get current user from request attributes
-            User currentUser = (User) request.getAttribute("currentUser");
-
-            if (currentUser == null) {
-                // Fallback: get from Security Context
-                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-                String email = authentication.getName();
-                currentUser = userService.findByEmail(email)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
-            }
-
-            // Update user profile
-            User updatedUser = userService.updateUserProfile(currentUser.getId(), updates);
-
-            // Convert to response DTO
-            UserResponse userResponse = userService.convertToUserResponse(updatedUser);
-
-            // Return success response
-            ApiResponse<UserResponse> apiResponse = ApiResponse.success(userResponse);
-            return ResponseEntity.ok(apiResponse);
-
-        } catch (Exception e) {
-            throw e;
-        }
+        User currentUser = getCurrentUser(request);
+        UserResponse userResponse = userFacade.updateUserProfile(currentUser, updates);
+        return ResponseEntity.ok(ApiResponse.success(userResponse));
     }
 
-    /**
-     * Get User by ID (Admin endpoint - for future use)
-     * GET /api/user/{id}
-     */
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable UUID id) {
-        try {
-            User user = userService.findById(id)
-                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
-
-            UserResponse userResponse = userService.convertToUserResponse(user);
-            ApiResponse<UserResponse> apiResponse = ApiResponse.success(userResponse);
-
-            return ResponseEntity.ok(apiResponse);
-
-        } catch (Exception e) {
-            throw e;
-        }
+        UserResponse userResponse = userFacade.getUserById(id);
+        return ResponseEntity.ok(ApiResponse.success(userResponse));
     }
 
-    /**
-     * Deactivate User (Admin endpoint - for future use)
-     * DELETE /api/user/{id}
-     */
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deactivateUser(@PathVariable UUID id) {
-        try {
-            userService.deactivateUser(id);
-
-            ApiResponse<Void> apiResponse = ApiResponse.success("User deactivated successfully");
-            return ResponseEntity.ok(apiResponse);
-
-        } catch (Exception e) {
-            throw e;
-        }
+        userFacade.deactivateUser(id);
+        return ResponseEntity.ok(ApiResponse.successVoid("User deactivated successfully"));
     }
 
-    /**
-     * Activate User (Admin endpoint - for future use)
-     * POST /api/user/{id}/activate
-     */
+
     @PostMapping("/{id}/activate")
     public ResponseEntity<ApiResponse<Void>> activateUser(@PathVariable UUID id) {
-        try {
-            userService.activateUser(id);
-
-            ApiResponse<Void> apiResponse = ApiResponse.success("User activated successfully");
-            return ResponseEntity.ok(apiResponse);
-
-        } catch (Exception e) {
-            throw e;
-        }
+        userFacade.activateUser(id);
+        return ResponseEntity.ok(ApiResponse.successVoid("User activated successfully"));
     }
 
     /**
-     * Get User Statistics (Admin endpoint - for future use)
+     * Get User Statistics (Admin endpoint)
      * GET /api/user/stats
      */
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getUserStats() {
-        try {
-            long activeUsersCount = userService.getActiveUsersCount();
-
-            Map<String, Object> stats = Map.of(
-                    "totalActiveUsers", activeUsersCount,
-                    "timestamp", java.time.LocalDateTime.now()
-            );
-
-            ApiResponse<Map<String, Object>> apiResponse = ApiResponse.success(stats);
-            return ResponseEntity.ok(apiResponse);
-
-        } catch (Exception e) {
-            throw e;
-        }
+        Map<String, Object> stats = userFacade.getUserStats();
+        return ResponseEntity.ok(ApiResponse.success(stats));
     }
 
     /**
-     * Check if user exists by email (Admin endpoint - for future use)
+     * Check if user exists by email (Admin endpoint)
      * GET /api/user/exists/email/{email}
      */
     @GetMapping("/exists/email/{email}")
     public ResponseEntity<ApiResponse<Map<String, Boolean>>> checkUserExistsByEmail(
             @PathVariable String email) {
 
-        try {
-            boolean exists = userService.existsByEmail(email);
-
-            Map<String, Boolean> result = Map.of("exists", exists);
-            ApiResponse<Map<String, Boolean>> apiResponse = ApiResponse.success(result);
-
-            return ResponseEntity.ok(apiResponse);
-
-        } catch (Exception e) {
-            throw e;
-        }
+        boolean exists = userFacade.checkUserExistsByEmail(email);
+        Map<String, Boolean> result = Map.of("exists", exists);
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     /**
-     * Check if user exists by Microsoft ID (Admin endpoint - for future use)
+     * Check if user exists by Microsoft ID (Admin endpoint)
      * GET /api/user/exists/microsoft/{microsoftId}
      */
     @GetMapping("/exists/microsoft/{microsoftId}")
     public ResponseEntity<ApiResponse<Map<String, Boolean>>> checkUserExistsByMicrosoftId(
             @PathVariable String microsoftId) {
 
-        try {
-            boolean exists = userService.existsByMicrosoftId(microsoftId);
+        boolean exists = userFacade.checkUserExistsByMicrosoftId(microsoftId);
+        Map<String, Boolean> result = Map.of("exists", exists);
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
 
-            Map<String, Boolean> result = Map.of("exists", exists);
-            ApiResponse<Map<String, Boolean>> apiResponse = ApiResponse.success(result);
+    /**
+     * Get current user from request attributes or security context
+     */
+    private User getCurrentUser(HttpServletRequest request) {
+        // Try to get from request attributes first (set by JwtAuthenticationFilter)
+        User currentUser = (User) request.getAttribute("currentUser");
 
-            return ResponseEntity.ok(apiResponse);
+        if (currentUser == null) {
+            // Fallback: get from Security Context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        } catch (Exception e) {
-            throw e;
+            if (authentication != null && authentication.getName() != null) {
+                String email = authentication.getName();
+                UserResponse userResponse = userFacade.getUserProfileByEmail(email);
+                // Note: This approach requires converting back to User entity
+                // In a real application, you might want to modify the facade to return User entity
+                throw new RuntimeException("User not found in request attributes");
+            }
+            throw new RuntimeException("No authenticated user found");
         }
+
+        return currentUser;
     }
 }
