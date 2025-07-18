@@ -11,8 +11,10 @@ spring:
     show-sql: true
 
 azure:
+  #Audience
   client-id: db541a76-dee1-42a8-8551-0336af1d250c
   client-secret:
+  #Issuer
   tenant-id: ac899a80-3bdc-43fd-8ffc-3a25b13612c3
   redirect-uri: http://localhost:3000/auth/callbacks
 

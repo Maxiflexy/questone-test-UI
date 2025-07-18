@@ -47,19 +47,11 @@ public class AuthController {
     public ResponseEntity<String> exchangeCodeForToken(@RequestBody Map<String, String> request) {
         String code = request.get("code");
 
-        System.out.println("=== Token Exchange Debug Info ===");
-        System.out.println("Received code: " + (code != null ? code.substring(0, Math.min(code.length(), 10)) + "..." : "null"));
-        System.out.println("Client ID: " + clientId);
-        System.out.println("Tenant ID: " + tenantId);
-        System.out.println("Redirect URI: " + redirectUri);
-        System.out.println("Client Secret configured: " + (clientSecret != null && !clientSecret.isEmpty() ? "Yes" : "No"));
-
         if (code == null || code.isEmpty()) {
             return ResponseEntity.badRequest().body("Authorization code is required");
         }
 
         String tokenUrl = "https://login.microsoftonline.com/" + tenantId + "/oauth2/v2.0/token";
-        System.out.println("Token URL: " + tokenUrl);
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("grant_type", "authorization_code");
@@ -72,8 +64,6 @@ public class AuthController {
             params.add("client_secret", clientSecret);
         }
 
-        System.out.println("Request parameters: " + params.toSingleValueMap().keySet());
-
         try {
             Mono<ResponseEntity<String>> responseMono = webClient.post()
                     .uri(tokenUrl)
@@ -83,15 +73,13 @@ public class AuthController {
                     .toEntity(String.class);
 
             ResponseEntity<String> response = responseMono.block();
-            System.out.println("Token exchange response status: " + response.getStatusCode());
-            System.out.println("Token exchange response body: " + response.getBody());
 
             if (response != null && response.getStatusCode() == HttpStatus.OK) {
                 JSONObject jsonResponse = new JSONObject(response.getBody());
                 String idToken = jsonResponse.getString("id_token");
 
                 try {
-                    // Use Auth0 JWT library to decode the ID token
+
                     DecodedJWT decodedJWT = JWT.decode(idToken);
 
                     // Extract user information from the decoded JWT
@@ -102,7 +90,6 @@ public class AuthController {
 
                     // Handle cases where claims might be null
                     if (userId == null || userId.isEmpty()) {
-                        System.err.println("Error: User ID (oid) claim is missing from ID token");
                         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                                 .body("Invalid ID token: missing user ID");
                     }
@@ -112,13 +99,6 @@ public class AuthController {
                     email = (email != null && !email.isEmpty()) ? email :
                             (preferredUsername != null && !preferredUsername.isEmpty()) ? preferredUsername : "unknown@example.com";
 
-                    System.out.println("Decoded JWT Claims:");
-                    System.out.println("User ID (oid): " + userId);
-                    System.out.println("Name: " + name);
-                    System.out.println("Email: " + email);
-                    System.out.println("Preferred Username: " + preferredUsername);
-                    System.out.println("Issuer: " + decodedJWT.getIssuer());
-                    System.out.println("Audience: " + decodedJWT.getAudience());
                     System.out.println("Expires At: " + decodedJWT.getExpiresAt());
 
                     // Save or update user in database
@@ -128,12 +108,8 @@ public class AuthController {
                     user.setEmail(email);
                     userRepository.save(user);
 
-                    System.out.println("User saved/updated successfully: " + userId);
-
                     // Generate JWT token for the application
                     String jwtToken = jwtUtil.generateToken(user);
-                    System.out.println("Generated JWT token successfully");
-
                     return ResponseEntity.ok(jwtToken);
 
                 } catch (Exception jwtException) {
