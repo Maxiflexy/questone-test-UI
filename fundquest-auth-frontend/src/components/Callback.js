@@ -1,38 +1,47 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { parseTokenFromUrl } from '../utils/msalConfig';
+import { parseCodeFromUrl, clearCodeVerifier } from '../utils/msalConfig';
 import { authService } from '../services/apiService';
 
 const Callback = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState('Processing authentication...');
   const [error, setError] = useState(null);
+  const hasProcessed = useRef(false); // Prevent double execution
 
   useEffect(() => {
     const handleCallback = async () => {
+      // Prevent double execution
+      if (hasProcessed.current) {
+        console.log('Callback already processed, skipping...');
+        return;
+      }
+      hasProcessed.current = true;
+
       try {
-        setStatus('Extracting authentication token...');
+        setStatus('Extracting authorization code...');
 
-        // Parse token from URL fragment
-        const tokenData = parseTokenFromUrl();
+        // Parse authorization code from URL query parameters
+        const codeData = parseCodeFromUrl();
 
-        if (tokenData.error) {
-          throw new Error(`Microsoft authentication error: ${tokenData.errorDescription || tokenData.error}`);
+        if (codeData.error) {
+          throw new Error(`Microsoft authentication error: ${codeData.errorDescription || codeData.error}`);
         }
 
-        if (!tokenData.idToken) {
-          throw new Error('No ID token received from Microsoft. Please try logging in again.');
+        if (!codeData.code) {
+          throw new Error('No authorization code received from Microsoft. Please try logging in again.');
         }
 
-        setStatus('Verifying token with backend...');
+        setStatus('Exchanging code for token...');
 
-        // Send ID token to backend for verification
-        const backendResponse = await authService.verifyMicrosoftToken(tokenData.idToken);
+        // Exchange authorization code for JWT token (no PKCE for Web apps)
+        const backendResponse = await authService.exchangeCodeForToken(codeData.code);
 
         if (backendResponse.success) {
           setStatus('Authentication successful! Redirecting to dashboard...');
 
-          // Clear the URL fragment to remove tokens from browser history
+          // Clear URL query parameters
+          clearCodeVerifier();
           window.history.replaceState({}, document.title, window.location.pathname);
 
           // Small delay to show success message
@@ -40,7 +49,7 @@ const Callback = () => {
             navigate('/dashboard');
           }, 1500);
         } else {
-          throw new Error(backendResponse.error?.message || 'Backend token verification failed');
+          throw new Error(backendResponse.error?.message || 'Backend token exchange failed');
         }
 
       } catch (error) {
@@ -48,7 +57,8 @@ const Callback = () => {
         setError(error.message || 'Authentication failed');
         setStatus('Authentication failed');
 
-        // Clear URL fragment even on error
+        // Clear URL query parameters even on error
+        clearCodeVerifier();
         window.history.replaceState({}, document.title, window.location.pathname);
 
         // Redirect to login after showing error
@@ -59,24 +69,24 @@ const Callback = () => {
     };
 
     handleCallback();
-  }, [navigate]);
+  }, [navigate]); // Add navigate to dependencies
 
   return (
-    <div className="callback-container">
-      <div className="callback-card">
-        <div className="callback-content">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
           {error ? (
             <>
-              <div className="error-icon">⚠️</div>
-              <h2>Authentication Failed</h2>
-              <p className="error-message">{error}</p>
-              <p>Redirecting to login page...</p>
+              <div className="text-red-500 text-6xl mb-4">⚠️</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentication Failed</h2>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <p className="text-sm text-gray-500">Redirecting to login page...</p>
             </>
           ) : (
             <>
-              <div className="loading-spinner"></div>
-              <h2>Authenticating</h2>
-              <p>{status}</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Authenticating</h2>
+              <p className="text-gray-600">{status}</p>
             </>
           )}
         </div>

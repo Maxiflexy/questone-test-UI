@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
 
 // Create axios instance
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, // Include cookies in requests
+  withCredentials: false, // Not using cookies for this implementation
   headers: {
     'Content-Type': 'application/json',
   },
@@ -14,7 +14,7 @@ const apiClient = axios.create({
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('jwtToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -25,83 +25,92 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle token refresh
+// Response interceptor to handle unauthorized requests
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Try to refresh token
-      try {
-        const refreshResponse = await refreshAccessToken();
-        if (refreshResponse.success) {
-          // Retry the original request
-          const originalRequest = error.config;
-          originalRequest.headers.Authorization = `Bearer ${refreshResponse.data.accessToken}`;
-          return apiClient(originalRequest);
-        }
-      } catch (refreshError) {
-        // Refresh failed, redirect to login
-        localStorage.removeItem('accessToken');
-        window.location.href = '/';
-      }
+      // Clear token and redirect to login
+      localStorage.removeItem('jwtToken');
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }
 );
 
+// Track active requests to prevent duplicates
+const activeRequests = new Map();
+
 // Auth API calls
 export const authService = {
-  // Verify Microsoft ID token
-  verifyMicrosoftToken: async (idToken) => {
-    try {
-      const response = await apiClient.post('/auth/microsoft/verify', {
-        idToken: idToken,
-      });
+  // Exchange authorization code for JWT token (no PKCE for Web apps)
+  exchangeCodeForToken: async (code) => {
+    // Create a unique key for this request
+    const requestKey = `exchange_${code}`;
 
-      if (response.data.success) {
-        // Store access token
-        localStorage.setItem('accessToken', response.data.data.accessToken);
-        return response.data;
-      }
-
-      throw new Error(response.data.error?.message || 'Authentication failed');
-    } catch (error) {
-      console.error('Microsoft token verification failed:', error);
-      throw error;
+    // Check if this request is already in progress
+    if (activeRequests.has(requestKey)) {
+      console.log('Code exchange already in progress, returning existing promise');
+      return activeRequests.get(requestKey);
     }
-  },
 
-  // Refresh access token
-  refreshAccessToken: async () => {
-    try {
-      const response = await apiClient.post('/auth/refresh');
+    // Create the request promise
+    const requestPromise = (async () => {
+      try {
+        console.log('Starting code exchange for:', code.substring(0, 10) + '...');
 
-      if (response.data.success) {
-        localStorage.setItem('accessToken', response.data.data.accessToken);
-        return response.data;
+        const response = await apiClient.post('/auth/exchange', {
+          code: code
+        });
+
+        if (response.data) {
+          // Store JWT token
+          localStorage.setItem('jwtToken', response.data);
+          return {
+            success: true,
+            data: { token: response.data }
+          };
+        }
+
+        throw new Error('No token received from backend');
+      } catch (error) {
+        console.error('Code exchange failed:', error);
+
+        let errorMessage = 'Authentication failed';
+        if (error.response?.data) {
+          errorMessage = error.response.data;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        return {
+          success: false,
+          error: { message: errorMessage }
+        };
+      } finally {
+        // Remove from active requests when done
+        activeRequests.delete(requestKey);
       }
+    })();
 
-      throw new Error(response.data.error?.message || 'Token refresh failed');
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      throw error;
-    }
+    // Store the promise to prevent duplicates
+    activeRequests.set(requestKey, requestPromise);
+
+    return requestPromise;
   },
 
   // Logout
   logout: async () => {
     try {
-      await apiClient.post('/auth/logout');
+      localStorage.removeItem('jwtToken');
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
-      localStorage.removeItem('accessToken');
     }
   },
 
   // Check if user is authenticated
   isAuthenticated: () => {
-    return !!localStorage.getItem('accessToken');
+    return !!localStorage.getItem('jwtToken');
   },
 };
 
@@ -110,22 +119,30 @@ export const userService = {
   // Get user profile
   getProfile: async () => {
     try {
-      const response = await apiClient.get('/api/user/profile');
-      return response.data;
+      const response = await apiClient.get('/profile');
+
+      if (response.data) {
+        return {
+          success: true,
+          data: response.data
+        };
+      }
+
+      throw new Error('No profile data received');
     } catch (error) {
       console.error('Get profile failed:', error);
-      throw error;
-    }
-  },
 
-  // Update user profile
-  updateProfile: async (updates) => {
-    try {
-      const response = await apiClient.put('/api/user/profile', updates);
-      return response.data;
-    } catch (error) {
-      console.error('Update profile failed:', error);
-      throw error;
+      let errorMessage = 'Failed to load profile';
+      if (error.response?.data) {
+        errorMessage = error.response.data;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      return {
+        success: false,
+        error: { message: errorMessage }
+      };
     }
   },
 };
@@ -134,16 +151,19 @@ export const userService = {
 export const healthService = {
   check: async () => {
     try {
-      const response = await apiClient.get('/auth/health');
-      return response.data;
+      const response = await apiClient.get('/health');
+      return {
+        success: true,
+        data: response.data
+      };
     } catch (error) {
       console.error('Health check failed:', error);
-      throw error;
+      return {
+        success: false,
+        error: { message: error.message }
+      };
     }
   },
 };
-
-// Export refresh function for interceptor
-const refreshAccessToken = authService.refreshAccessToken;
 
 export default apiClient;

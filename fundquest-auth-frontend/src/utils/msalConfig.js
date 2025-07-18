@@ -1,20 +1,20 @@
-// Simple Microsoft OAuth configuration (no MSAL library needed)
+// Microsoft OAuth configuration for authorization code flow (Web app - no PKCE)
 export const msalConfig = {
-  clientId: process.env.REACT_APP_MICROSOFT_CLIENT_ID,
-  tenantId: process.env.REACT_APP_MICROSOFT_TENANT_ID,
+  clientId: process.env.REACT_APP_AZURE_CLIENT_ID,
+  tenantId: process.env.REACT_APP_AZURE_TENANT_ID,
   redirectUri: process.env.REACT_APP_REDIRECT_URI,
-  authority: `https://login.microsoftonline.com/${process.env.REACT_APP_MICROSOFT_TENANT_ID}`,
+  authority: `https://login.microsoftonline.com/${process.env.REACT_APP_AZURE_TENANT_ID}`,
 };
 
 // Microsoft OAuth2 endpoints
 export const loginRequest = {
   scopes: ["openid", "profile", "email"],
-  responseType: "id_token",
-  responseMode: "fragment",
+  responseType: "code",
+  responseMode: "query",
 };
 
-// Build authorization URL
-export const buildAuthUrl = () => {
+// Build authorization URL for authorization code flow (no PKCE for Web apps)
+export async function buildAuthUrl() {
   const params = new URLSearchParams({
     client_id: msalConfig.clientId,
     response_type: loginRequest.responseType,
@@ -26,16 +26,25 @@ export const buildAuthUrl = () => {
   });
 
   return `${msalConfig.authority}/oauth2/v2.0/authorize?${params.toString()}`;
-};
+}
 
-// Parse token from URL fragment
-export const parseTokenFromUrl = () => {
-  const fragment = window.location.hash.substring(1);
-  const params = new URLSearchParams(fragment);
+// Parse authorization code from URL query parameters
+export const parseCodeFromUrl = () => {
+  const urlParams = new URLSearchParams(window.location.search);
 
   return {
-    idToken: params.get('id_token'),
-    error: params.get('error'),
-    errorDescription: params.get('error_description'),
+    code: urlParams.get('code'),
+    error: urlParams.get('error'),
+    errorDescription: urlParams.get('error_description'),
+    state: urlParams.get('state'),
   };
+};
+
+// Helper functions for cleanup (no longer needed but keeping for compatibility)
+export const getCodeVerifier = () => {
+  return null; // Not needed for Web apps
+};
+
+export const clearCodeVerifier = () => {
+  // Not needed for Web apps
 };

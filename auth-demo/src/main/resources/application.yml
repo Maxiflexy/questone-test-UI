@@ -12,12 +12,12 @@ spring:
 
 azure:
   client-id: db541a76-dee1-42a8-8551-0336af1d250c
-  client-secret: Zhp8Q~8t8cIKJJxDl__~lpWZrvc6AIDCvYviBbjd
+  client-secret:
   tenant-id: ac899a80-3bdc-43fd-8ffc-3a25b13612c3
   redirect-uri: http://localhost:3000/auth/callbacks
 
 jwt:
-  secret: your_jwt_secret_key_please_change_this_to_a_secure_value
+  secret: oInSIJCVHgXa7xXDQD+hqDAR4aLcpsOxV3eadpmPEWkilp6jfsbfZRF1N5DLNV6w
   expiration: 3600000  # 1 hour in milliseconds
 
 

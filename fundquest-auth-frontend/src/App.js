@@ -33,8 +33,8 @@ function App() {
             }
           />
 
-          {/* Auth callback route */}
-          <Route path="/auth/callback" element={<Callback />} />
+          {/* Auth callback route - Updated to match the redirect URI */}
+          <Route path="/auth/callbacks" element={<Callback />} />
 
           {/* Protected routes */}
           <Route

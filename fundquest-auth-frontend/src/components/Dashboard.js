@@ -58,8 +58,13 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="dashboard-container">
-        <div className="loading-spinner"></div>
-        <p>Loading profile...</p>
+        <div className="callback-card">
+          <div className="callback-content">
+            <div className="loading-spinner"></div>
+            <h2>Loading Profile</h2>
+            <p>Please wait while we load your profile...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -95,7 +100,7 @@ const Dashboard = () => {
             </div>
             <div className="profile-info">
               <h2>{user?.name || 'Unknown User'}</h2>
-              <p className="profile-email">{user?.email}</p>
+              <p className="profile-email">{user?.email || 'No email provided'}</p>
             </div>
           </div>
 
@@ -103,57 +108,24 @@ const Dashboard = () => {
             <h3>Profile Information</h3>
             <div className="detail-grid">
               <div className="detail-item">
+                <label>User ID</label>
+                <span className="microsoft-id">{user?.id || 'Not provided'}</span>
+              </div>
+
+              <div className="detail-item">
                 <label>Full Name</label>
                 <span>{user?.name || 'Not provided'}</span>
               </div>
 
               <div className="detail-item">
-                <label>Email</label>
+                <label>Email Address</label>
                 <span>{user?.email || 'Not provided'}</span>
               </div>
 
               <div className="detail-item">
-                <label>Given Name</label>
-                <span>{user?.givenName || 'Not provided'}</span>
-              </div>
-
-              <div className="detail-item">
-                <label>Family Name</label>
-                <span>{user?.familyName || 'Not provided'}</span>
-              </div>
-
-              <div className="detail-item">
-                <label>Job Title</label>
-                <span>{user?.jobTitle || 'Not provided'}</span>
-              </div>
-
-              <div className="detail-item">
-                <label>Department</label>
-                <span>{user?.department || 'Not provided'}</span>
-              </div>
-
-              <div className="detail-item">
-                <label>Microsoft ID</label>
-                <span className="microsoft-id">{user?.microsoftId || 'Not provided'}</span>
-              </div>
-
-              <div className="detail-item">
-                <label>Member Since</label>
-                <span>
-                  {user?.createdAt
-                    ? new Date(user.createdAt).toLocaleDateString()
-                    : 'Not provided'
-                  }
-                </span>
-              </div>
-
-              <div className="detail-item">
-                <label>Last Login</label>
-                <span>
-                  {user?.lastLogin
-                    ? new Date(user.lastLogin).toLocaleString()
-                    : 'Not provided'
-                  }
+                <label>Authentication Status</label>
+                <span style={{ color: '#28a745', fontWeight: 'bold' }}>
+                  ✓ Authenticated
                 </span>
               </div>
             </div>
@@ -161,16 +133,24 @@ const Dashboard = () => {
         </div>
 
         <div className="actions-card">
-          <h3>Quick Actions</h3>
+          <h3>Account Information</h3>
           <div className="action-buttons">
-            <button className="action-button">
-              View Activity
-            </button>
-            <button className="action-button">
-              Account Settings
-            </button>
-            <button className="action-button">
-              Security Settings
+            <div className="action-button" style={{ cursor: 'default' }}>
+              <strong>Microsoft ID:</strong><br />
+              <span style={{ fontSize: '12px', fontFamily: 'monospace' }}>
+                {user?.id || 'Not available'}
+              </span>
+            </div>
+            <div className="action-button" style={{ cursor: 'default' }}>
+              <strong>Login Status:</strong><br />
+              <span style={{ color: '#28a745' }}>Active Session</span>
+            </div>
+            <button
+              className="action-button"
+              onClick={() => window.location.reload()}
+              style={{ cursor: 'pointer' }}
+            >
+              Refresh Profile
             </button>
           </div>
         </div>

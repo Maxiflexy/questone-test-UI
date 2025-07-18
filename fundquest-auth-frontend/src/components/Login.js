@@ -5,13 +5,13 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Build Microsoft OAuth URL
-      const authUrl = buildAuthUrl();
+      // Build Microsoft OAuth URL with PKCE
+      const authUrl = await buildAuthUrl();
 
       // Redirect to Microsoft
       window.location.href = authUrl;
