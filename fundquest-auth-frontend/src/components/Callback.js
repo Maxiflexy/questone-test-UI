@@ -32,13 +32,17 @@ const Callback = () => {
           throw new Error('No authorization code received from Microsoft. Please try logging in again.');
         }
 
-        setStatus('Exchanging code for token...');
+        console.log('Authorization code received:', codeData.code.substring(0, 10) + '...');
+        setStatus('Verifying Microsoft token with backend...');
 
-        // Exchange authorization code for JWT token (no PKCE for Web apps)
+        // Exchange authorization code for JWT token using new API
         const backendResponse = await authService.exchangeCodeForToken(codeData.code);
+
+        console.log('Backend verification response:', backendResponse);
 
         if (backendResponse.success) {
           setStatus('Authentication successful! Redirecting to dashboard...');
+          console.log('Authentication successful, tokens stored');
 
           // Clear URL query parameters
           clearCodeVerifier();
@@ -49,7 +53,11 @@ const Callback = () => {
             navigate('/dashboard');
           }, 1500);
         } else {
-          throw new Error(backendResponse.error?.message || 'Backend token exchange failed');
+          const errorMessage = backendResponse.error?.message || 'Backend token verification failed';
+          const errorCode = backendResponse.error?.code || 'UNKNOWN_ERROR';
+
+          console.error('Backend verification failed:', errorCode, errorMessage);
+          throw new Error(`${errorCode}: ${errorMessage}`);
         }
 
       } catch (error) {
@@ -64,29 +72,41 @@ const Callback = () => {
         // Redirect to login after showing error
         setTimeout(() => {
           navigate('/');
-        }, 3000);
+        }, 5000);
       }
     };
 
     handleCallback();
-  }, [navigate]); // Add navigate to dependencies
+  }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
+    <div className="callback-container">
+      <div className="callback-card">
+        <div className="callback-content">
           {error ? (
             <>
-              <div className="text-red-500 text-6xl mb-4">⚠️</div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentication Failed</h2>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <p className="text-sm text-gray-500">Redirecting to login page...</p>
+              <div className="error-icon">⚠️</div>
+              <h2>Authentication Failed</h2>
+              <p style={{ marginBottom: '16px', color: '#dc3545' }}>{error}</p>
+              <p style={{ fontSize: '14px', color: '#666' }}>
+                Redirecting to login page in a few seconds...
+              </p>
+              <button
+                onClick={() => navigate('/')}
+                className="button-secondary"
+                style={{ marginTop: '16px' }}
+              >
+                Return to Login
+              </button>
             </>
           ) : (
             <>
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Authenticating</h2>
-              <p className="text-gray-600">{status}</p>
+              <div className="loading-spinner"></div>
+              <h2>Authenticating</h2>
+              <p>{status}</p>
+              <p style={{ fontSize: '12px', color: '#888', marginTop: '16px' }}>
+                Please wait while we securely authenticate you with Microsoft...
+              </p>
             </>
           )}
         </div>

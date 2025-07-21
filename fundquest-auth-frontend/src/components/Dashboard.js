@@ -25,6 +25,7 @@ const Dashboard = () => {
 
         if (response.success) {
           setUser(response.data);
+          console.log('User profile loaded:', response.data);
         } else {
           throw new Error(response.error?.message || 'Failed to load profile');
         }
@@ -46,12 +47,31 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     try {
+      setLoading(true);
       await authService.logout();
       navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
       // Even if logout fails, redirect to login
       navigate('/');
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not available';
+
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short'
+      });
+    } catch (error) {
+      return 'Invalid date';
     }
   };
 
@@ -87,8 +107,8 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h1>Welcome to FundQuest</h1>
-        <button onClick={handleLogout} className="logout-button">
-          Logout
+        <button onClick={handleLogout} className="logout-button" disabled={loading}>
+          {loading ? 'Logging out...' : 'Logout'}
         </button>
       </div>
 
@@ -108,11 +128,6 @@ const Dashboard = () => {
             <h3>Profile Information</h3>
             <div className="detail-grid">
               <div className="detail-item">
-                <label>User ID</label>
-                <span className="microsoft-id">{user?.id || 'Not provided'}</span>
-              </div>
-
-              <div className="detail-item">
                 <label>Full Name</label>
                 <span>{user?.name || 'Not provided'}</span>
               </div>
@@ -123,10 +138,25 @@ const Dashboard = () => {
               </div>
 
               <div className="detail-item">
+                <label>Microsoft ID</label>
+                <span className="microsoft-id">{user?.microsoftId || 'Not provided'}</span>
+              </div>
+
+              <div className="detail-item">
                 <label>Authentication Status</label>
                 <span style={{ color: '#28a745', fontWeight: 'bold' }}>
                   ✓ Authenticated
                 </span>
+              </div>
+
+              <div className="detail-item">
+                <label>Account Created</label>
+                <span>{formatDate(user?.createdAt)}</span>
+              </div>
+
+              <div className="detail-item">
+                <label>Last Login</label>
+                <span>{formatDate(user?.lastLogin)}</span>
               </div>
             </div>
           </div>
@@ -137,14 +167,23 @@ const Dashboard = () => {
           <div className="action-buttons">
             <div className="action-button" style={{ cursor: 'default' }}>
               <strong>Microsoft ID:</strong><br />
-              <span style={{ fontSize: '12px', fontFamily: 'monospace' }}>
-                {user?.id || 'Not available'}
+              <span style={{ fontSize: '12px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                {user?.microsoftId || 'Not available'}
               </span>
             </div>
+
             <div className="action-button" style={{ cursor: 'default' }}>
               <strong>Login Status:</strong><br />
               <span style={{ color: '#28a745' }}>Active Session</span>
             </div>
+
+            <div className="action-button" style={{ cursor: 'default' }}>
+              <strong>Last Activity:</strong><br />
+              <span style={{ fontSize: '13px' }}>
+                {formatDate(user?.lastLogin)}
+              </span>
+            </div>
+
             <button
               className="action-button"
               onClick={() => window.location.reload()}

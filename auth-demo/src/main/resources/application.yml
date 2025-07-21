@@ -19,7 +19,7 @@ azure:
   redirect-uri: http://localhost:3000/auth/callbacks
 
 jwt:
-  secret: oInSIJCVHgXa7xXDQD+hqDAR4aLcpsOxV3eadpmPEWkilp6jfsbfZRF1N5DLNV6w
+  secret:
   expiration: 3600000  # 1 hour in milliseconds
 
 
