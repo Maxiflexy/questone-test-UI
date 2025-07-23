@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: keyvault-demo
+  cloud:
+    azure:
+      keyvault:
+        secret:
+          enabled: true
+          endpoint: https://kv-demo-secrets.vault.azure.net/
+          property-sources:
+            - endpoint: https://kv-demo-secrets.vault.azure.net/
+              name: kv-demo-secrets
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.azure: DEBUG
+    com.example: DEBUG
