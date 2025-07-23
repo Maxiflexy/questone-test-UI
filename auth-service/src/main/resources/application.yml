@@ -3,9 +3,9 @@ spring:
     name: auth-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/fundquest_auth
-    username: postgres
-    password: password
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/fundquest_auth}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -57,7 +57,6 @@ management:
   endpoint:
     health:
       show-details: when_authorized
-
 
 app:
   cors:
