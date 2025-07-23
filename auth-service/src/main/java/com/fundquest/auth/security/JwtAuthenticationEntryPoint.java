@@ -1,35 +1,39 @@
 package com.fundquest.auth.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fundquest.auth.constants.AppConstants;
 import com.fundquest.auth.dto.response.ApiResponse;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-/**
- * JWT Authentication Entry Point
- */
 @Component
+@Slf4j
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public void commence(HttpServletRequest request,
-                         HttpServletResponse response,
-                         org.springframework.security.core.AuthenticationException authException)
-            throws IOException, ServletException {
+    public void commence(HttpServletRequest request, HttpServletResponse response,
+                         AuthenticationException authException) throws IOException, ServletException {
 
-        response.setContentType("application/json");
+        log.error("Unauthorized error: {}", authException.getMessage());
+
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
-        ApiResponse<Void> errorResponse = ApiResponse.error("UNAUTHORIZED",
-                "Invalid or missing authentication token");
+        ApiResponse<Void> apiResponse = ApiResponse.error(
+                AppConstants.UNAUTHORIZED,
+                "Invalid or missing authentication token"
+        );
 
-        response.getOutputStream().println(objectMapper.writeValueAsString(errorResponse));
+        objectMapper.writeValue(response.getOutputStream(), apiResponse);
     }
 }

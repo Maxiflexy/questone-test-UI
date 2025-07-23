@@ -1,136 +1,80 @@
 package com.fundquest.auth.controller;
 
-import com.fundquest.auth.dto.request.MicrosoftTokenRequest;
+import com.fundquest.auth.constants.AppConstants;
+import com.fundquest.auth.dto.request.VerifyMicrosoftTokenRequest;
 import com.fundquest.auth.dto.response.ApiResponse;
 import com.fundquest.auth.dto.response.AuthResponse;
-import com.fundquest.auth.dto.response.TokenResponse;
 import com.fundquest.auth.entity.User;
-import com.fundquest.auth.facade.AuthFacade;
+import com.fundquest.auth.exception.InvalidTokenException;
+import com.fundquest.auth.service.AuthService;
+import com.fundquest.auth.service.JwtService;
+import com.fundquest.auth.service.UserService;
+import com.fundquest.auth.util.AuthResponseHelper;
 import com.fundquest.auth.util.CookieHelper;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
-
-/**
- * REST Controller for authentication operations
- * Delegates business logic to AuthFacade
- */
 @RestController
-@RequestMapping("/auth")
+@RequestMapping(AppConstants.AUTH_BASE_PATH)
+@RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
-    private final AuthFacade authFacade;
+    private final AuthService authService;
+    private final AuthResponseHelper authResponseHelper;
     private final CookieHelper cookieHelper;
 
-    @Autowired
-    public AuthController(AuthFacade authFacade, CookieHelper cookieHelper) {
-        this.authFacade = authFacade;
-        this.cookieHelper = cookieHelper;
-    }
-
-    /**
-     * Verify Microsoft ID Token
-     */
     @PostMapping("/microsoft/verify")
     public ResponseEntity<ApiResponse<AuthResponse>> verifyMicrosoftToken(
-            @Valid @RequestBody MicrosoftTokenRequest request,
+            @Valid @RequestBody VerifyMicrosoftTokenRequest request,
             HttpServletResponse response) {
 
-        // Authenticate user with Microsoft ID token
-        System.out.println("Request here!");
-        AuthResponse authResponse = authFacade.authenticateWithMicrosoft(request);
+        log.info("Received Microsoft token verification request");
 
-        // Generate refresh token
-        Optional<User> user = authFacade.getUserByEmail(authResponse.getUser().getEmail());
-        if (user.isPresent()) {
-            String refreshToken = authFacade.generateRefreshToken(user.get());
+        AuthResponse authResponse = authService.verifyMicrosoftToken(request);
 
-            // Set refresh token as HttpOnly cookie
-            cookieHelper.addRefreshTokenCookie(
-                    response,
-                    refreshToken,
-                    authFacade.getRefreshTokenExpirationInSeconds()
-            );
-        }
+        authResponseHelper.prepareAuthResponseWithCookie(authResponse, response);
+
+        log.info("Successfully verified Microsoft token and set refresh token cookie");
 
         return ResponseEntity.ok(ApiResponse.success(authResponse));
     }
 
-    /**
-     * Refresh Access Token
-     * POST /auth/refresh
-     */
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<TokenResponse>> refreshToken(
-            HttpServletRequest request,
-            HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(HttpServletRequest request) {
 
-        // Get refresh token from cookie
-        String refreshToken = cookieHelper.getRefreshTokenFromCookie(request);
+        log.info("Received token refresh request");
 
-        if (refreshToken == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error("NO_REFRESH_TOKEN", "Refresh token not found in cookies"));
-        }
+        String refreshToken = cookieHelper.extractRefreshTokenFromCookies(request)
+                .orElseThrow(() -> new InvalidTokenException(
+                        "Refresh token not found in cookies",
+                        AppConstants.NO_REFRESH_TOKEN
+                ));
 
-        try {
-            // Refresh access token
-            TokenResponse tokenResponse = authFacade.refreshAccessToken(refreshToken);
-            return ResponseEntity.ok(ApiResponse.success(tokenResponse));
+        AuthResponse authResponse = authService.refreshAccessToken(refreshToken);
 
-        } catch (Exception e) {
-            // Clear the refresh token cookie on error
-            cookieHelper.clearRefreshTokenCookie(response);
-            throw e;
-        }
+        log.info("Successfully refreshed access token");
+
+        return ResponseEntity.ok(ApiResponse.success(authResponse));
     }
 
-    /**
-     * Logout
-     * POST /auth/logout
-     */
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(
-            HttpServletRequest request,
-            HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<String>> logout(HttpServletResponse response) {
 
-        try {
-            // Get access token from Authorization header
-            String accessToken = cookieHelper.extractBearerToken(request);
-
-            // Logout user
-            authFacade.logout(accessToken);
-
-            return ResponseEntity.ok(ApiResponse.successVoid("Successfully logged out"));
-
-        } finally {
-            // Always clear the refresh token cookie
-            cookieHelper.clearRefreshTokenCookie(response);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof String email) {
+            authService.logout(email);
         }
-    }
-
-    /**
-     * Health Check Endpoint
-     * GET /auth/health
-     */
-    @GetMapping("/health")
-    public ResponseEntity<ApiResponse<String>> healthCheck() {
-        return ResponseEntity.ok(ApiResponse.success("FundQuest Auth Service is healthy"));
-    }
-
-    /**
-     * Get token info (for debugging - remove in production)
-     * POST /auth/token/info
-     */
-    @PostMapping("/token/info")
-    public ResponseEntity<ApiResponse<Object>> getTokenInfo(@RequestBody String token) {
-        Object tokenInfo = authFacade.parseToken(token);
-        return ResponseEntity.ok(ApiResponse.success(tokenInfo));
+        authResponseHelper.clearAuthSession(response);
+        log.info("Successfully logged out user");
+        return ResponseEntity.ok(ApiResponse.success(AppConstants.LOGOUT_SUCCESS));
     }
 }

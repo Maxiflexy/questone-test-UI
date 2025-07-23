@@ -1,77 +1,41 @@
 package com.fundquest.auth.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-import java.time.LocalDateTime;
-
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@AllArgsConstructor
 public class ApiResponse<T> {
     private boolean success;
     private T data;
-    private ErrorResponse error;
+    private ErrorDetails error;
     private String message;
-    private LocalDateTime timestamp;
-
-    public ApiResponse(boolean success, T data) {
-        this();
-        this.success = success;
-        this.data = data;
-        this.timestamp = LocalDateTime.now();
-    }
-
-    public ApiResponse(boolean success, String message) {
-        this();
-        this.success = success;
-        this.message = message;
-        this.timestamp = LocalDateTime.now();
-    }
-
-    public ApiResponse(boolean success, ErrorResponse error) {
-        this();
-        this.success = success;
-        this.error = error;
-        this.timestamp = LocalDateTime.now();
-    }
 
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(true, data);
+        return ApiResponse.<T>builder()
+                .success(true)
+                .data(data)
+                .build();
     }
 
     public static <T> ApiResponse<T> success(String message) {
-        ApiResponse<T> response = new ApiResponse<>();
-        response.setSuccess(true);
-        response.setMessage(message);
-        response.setTimestamp(LocalDateTime.now());
-        return response;
-    }
-
-    public static ApiResponse<Void> successVoid(String message) {
-        ApiResponse<Void> response = new ApiResponse<>();
-        response.setSuccess(true);
-        response.setMessage(message);
-        response.setTimestamp(LocalDateTime.now());
-        return response;
-    }
-
-    public static ApiResponse<Void> successVoid() {
-        ApiResponse<Void> response = new ApiResponse<>();
-        response.setSuccess(true);
-        response.setTimestamp(LocalDateTime.now());
-        return response;
-    }
-
-    public static <T> ApiResponse<T> error(ErrorResponse error) {
-        return new ApiResponse<>(false, error);
+        return ApiResponse.<T>builder()
+                .success(true)
+                .message(message)
+                .build();
     }
 
     public static <T> ApiResponse<T> error(String code, String message) {
-        return new ApiResponse<>(false, new ErrorResponse(code, message));
+        return ApiResponse.<T>builder()
+                .success(false)
+                .error(ErrorDetails.builder()
+                        .code(code)
+                        .message(message)
+                        .build())
+                .build();
     }
 }

@@ -1,96 +1,71 @@
 package com.fundquest.auth.util;
 
+import com.fundquest.auth.constants.AppConstants;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-/**
- * Utility class for cookie operations
- */
+import java.util.Optional;
+
 @Component
+@Slf4j
 public class CookieHelper {
 
-    @Value("${app.cookie.secure:false}")
-    private boolean cookieSecure;
-
-    @Value("${app.cookie.same-site:Lax}")
-    private String cookieSameSite;
-
-    private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
-    private static final String COOKIE_PATH = "/";
-
     /**
-     * Create refresh token cookie
+     * Sets refresh token as HTTP-only secure cookie
      */
-    public Cookie createRefreshTokenCookie(String refreshToken, long maxAgeInSeconds) {
-        Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(cookieSecure);
-        cookie.setPath(COOKIE_PATH);
-        cookie.setMaxAge((int) maxAgeInSeconds);
+    public void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
+        Cookie refreshTokenCookie = new Cookie(AppConstants.REFRESH_TOKEN_COOKIE, refreshToken);
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(true);
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setMaxAge(AppConstants.COOKIE_MAX_AGE);
+        refreshTokenCookie.setAttribute("SameSite", "Lax");
 
-        // Note: SameSite attribute is not directly supported in Cookie class
-        // In production, you might want to set it via response headers
-        return cookie;
+        response.addCookie(refreshTokenCookie);
+        log.debug("Refresh token cookie set successfully");
     }
 
     /**
-     * Create cookie to clear refresh token
+     * Clears refresh token cookie by setting it to empty with zero max age
      */
-    public Cookie createClearRefreshTokenCookie() {
-        Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, "");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(cookieSecure);
-        cookie.setPath(COOKIE_PATH);
-        cookie.setMaxAge(0);
-        return cookie;
+    public void clearRefreshTokenCookie(HttpServletResponse response) {
+        Cookie refreshTokenCookie = new Cookie(AppConstants.REFRESH_TOKEN_COOKIE, "");
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(true);
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setMaxAge(0);
+        refreshTokenCookie.setAttribute("SameSite", "Lax");
+
+        response.addCookie(refreshTokenCookie);
+        log.debug("Refresh token cookie cleared successfully");
     }
 
     /**
-     * Get refresh token from request cookies
+     * Extracts refresh token from request cookies
      */
-    public String getRefreshTokenFromCookie(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (REFRESH_TOKEN_COOKIE_NAME.equals(cookie.getName())) {
-                    return cookie.getValue();
+    public Optional<String> extractRefreshTokenFromCookies(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (AppConstants.REFRESH_TOKEN_COOKIE.equals(cookie.getName())) {
+                    String value = cookie.getValue();
+                    if (value != null && !value.trim().isEmpty()) {
+                        log.debug("Refresh token extracted from cookies");
+                        return Optional.of(value);
+                    }
                 }
             }
         }
-
-        return null;
+        log.debug("No refresh token found in cookies");
+        return Optional.empty();
     }
 
     /**
-     * Add refresh token cookie to response
+     * Validates if refresh token exists in cookies
      */
-    public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken, long maxAgeInSeconds) {
-        Cookie cookie = createRefreshTokenCookie(refreshToken, maxAgeInSeconds);
-        response.addCookie(cookie);
-    }
-
-    /**
-     * Clear refresh token cookie from response
-     */
-    public void clearRefreshTokenCookie(HttpServletResponse response) {
-        Cookie cookie = createClearRefreshTokenCookie();
-        response.addCookie(cookie);
-    }
-
-    /**
-     * Extract bearer token from authorization header
-     */
-    public String extractBearerToken(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
-        }
-
-        return null;
+    public boolean hasRefreshToken(HttpServletRequest request) {
+        return extractRefreshTokenFromCookies(request).isPresent();
     }
 }

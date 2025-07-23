@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthResponse {
-    private String accessToken;
-    private Long expiresIn;
-    private String tokenType;
+public class ErrorDetails {
+    private String code;
+    private String message;
 }

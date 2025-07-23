@@ -1,66 +1,65 @@
 package com.fundquest.auth.exception;
 
+import com.fundquest.auth.constants.AppConstants;
 import com.fundquest.auth.dto.response.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
-    /**
-     * Handle authentication exceptions
-     */
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(
-            AuthenticationException ex, WebRequest request) {
-
-        HttpStatus status = getHttpStatusForAuthError(ex.getErrorCode());
-        ApiResponse<Void> response = ApiResponse.error(ex.getErrorCode(), ex.getMessage());
-
-        return new ResponseEntity<>(response, status);
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUserNotFoundException(UserNotFoundException ex) {
+        log.error("User not found: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(ex.getErrorCode(), ex.getMessage()));
     }
 
-    /**
-     * Handle token validation exceptions
-     */
-    @ExceptionHandler(TokenValidationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleTokenValidationException(
-            TokenValidationException ex, WebRequest request) {
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidTokenException(InvalidTokenException ex) {
+        log.error("Invalid token: {}", ex.getMessage());
 
-        HttpStatus status = getHttpStatusForTokenError(ex.getErrorCode());
-        ApiResponse<Void> response = ApiResponse.error(ex.getErrorCode(), ex.getMessage());
-
-        return new ResponseEntity<>(response, status);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(ex.getErrorCode(), ex.getMessage()));
     }
 
-    /**
-     * Handle user exceptions
-     */
-    @ExceptionHandler(UserException.class)
-    public ResponseEntity<ApiResponse<Void>> handleUserException(
-            UserException ex, WebRequest request) {
+    @ExceptionHandler(MicrosoftOAuthException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMicrosoftOAuthException(MicrosoftOAuthException ex) {
+        log.error("Microsoft OAuth error: {}", ex.getMessage());
 
-        HttpStatus status = getHttpStatusForUserError(ex.getErrorCode());
-        ApiResponse<Void> response = ApiResponse.error(ex.getErrorCode(), ex.getMessage());
+        HttpStatus status;
+        if (AppConstants.INVALID_AUTH_CODE.equals(ex.getErrorCode())) {
+            status = HttpStatus.BAD_REQUEST;
+        } else if (AppConstants.AUTH_CODE_EXPIRED.equals(ex.getErrorCode())) {
+            status = HttpStatus.UNAUTHORIZED;
+        } else if (AppConstants.INVALID_TENANT.equals(ex.getErrorCode())) {
+            status = HttpStatus.FORBIDDEN;
+        } else {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
 
-        return new ResponseEntity<>(response, status);
+        return ResponseEntity.status(status)
+                .body(ApiResponse.error(ex.getErrorCode(), ex.getMessage()));
     }
 
-    /**
-     * Handle validation exceptions
-     */
+    @ExceptionHandler(TokenExtractionException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTokenExtractionException(TokenExtractionException ex) {
+        log.error("Token extraction error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getErrorCode(), ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationExceptions(
-            MethodArgumentNotValidException ex, WebRequest request) {
-
+    public ResponseEntity<ApiResponse<Void>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
@@ -68,78 +67,27 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
-        ApiResponse<Map<String, String>> response = ApiResponse.error("VALIDATION_ERROR", "Validation failed");
-        response.setData(errors);
+        String errorMessage = "Validation failed: " + errors;
+        log.error("Validation error: {}", errorMessage);
 
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("VALIDATION_ERROR", errorMessage));
     }
 
-    /**
-     * Handle illegal argument exceptions
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(
-            IllegalArgumentException ex, WebRequest request) {
-
-        ApiResponse<Void> response = ApiResponse.error("INVALID_ARGUMENT", ex.getMessage());
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    @ExceptionHandler(FundQuestAuthException.class)
+    public ResponseEntity<ApiResponse<Void>> handleFundQuestAuthException(FundQuestAuthException ex) {
+        log.error("FundQuest Auth error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error(
+                        ex.getErrorCode() != null ? ex.getErrorCode() : "INTERNAL_ERROR",
+                        ex.getMessage()
+                ));
     }
 
-    /**
-     * Handle generic runtime exceptions
-     */
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiResponse<Void>> handleRuntimeException(
-            RuntimeException ex, WebRequest request) {
-
-        ApiResponse<Void> response = ApiResponse.error("INTERNAL_ERROR", "An unexpected error occurred");
-        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    /**
-     * Handle all other exceptions
-     */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleGlobalException(
-            Exception ex, WebRequest request) {
-
-        ApiResponse<Void> response = ApiResponse.error("INTERNAL_ERROR", "An unexpected error occurred");
-        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    /**
-     * Get HTTP status for authentication errors
-     */
-    private HttpStatus getHttpStatusForAuthError(String errorCode) {
-        return switch (errorCode) {
-            case "INVALID_TOKEN", "TOKEN_EXPIRED" -> HttpStatus.BAD_REQUEST;
-            case "INVALID_TENANT" -> HttpStatus.FORBIDDEN;
-            case "UNAUTHORIZED", "INVALID_ACCESS_TOKEN", "INVALID_REFRESH_TOKEN", "NO_REFRESH_TOKEN" -> HttpStatus.UNAUTHORIZED;
-            default -> HttpStatus.INTERNAL_SERVER_ERROR;
-        };
-    }
-
-    /**
-     * Get HTTP status for token errors
-     */
-    private HttpStatus getHttpStatusForTokenError(String errorCode) {
-        return switch (errorCode) {
-            case "TOKEN_VALIDATION_ERROR" -> HttpStatus.BAD_REQUEST;
-            case "INVALID_TOKEN", "TOKEN_EXPIRED" -> HttpStatus.UNAUTHORIZED;
-            case "INVALID_TENANT" -> HttpStatus.FORBIDDEN;
-            default -> HttpStatus.INTERNAL_SERVER_ERROR;
-        };
-    }
-
-    /**
-     * Get HTTP status for user errors
-     */
-    private HttpStatus getHttpStatusForUserError(String errorCode) {
-        return switch (errorCode) {
-            case "USER_NOT_FOUND" -> HttpStatus.NOT_FOUND;
-            case "USER_INACTIVE" -> HttpStatus.FORBIDDEN;
-            case "INVALID_USER_DATA" -> HttpStatus.BAD_REQUEST;
-            default -> HttpStatus.INTERNAL_SERVER_ERROR;
-        };
+    public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
+        log.error("Unexpected error occurred", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("INTERNAL_ERROR", "An unexpected error occurred"));
     }
 }

@@ -1,21 +1,10 @@
 package com.fundquest.auth.service;
 
+import com.fundquest.auth.dto.request.VerifyMicrosoftTokenRequest;
 import com.fundquest.auth.dto.response.AuthResponse;
-import com.fundquest.auth.dto.response.TokenResponse;
-import com.fundquest.auth.entity.User;
-import java.util.Optional;
 
 public interface AuthService {
-
-    AuthResponse authenticateWithMicrosoft(String idToken);
-
-    TokenResponse refreshAccessToken(String refreshToken);
-
-    User validateAccessToken(String accessToken);
-
-    Optional<User> getUserByEmail(String email);
-
-    void logout(String accessToken);
-
-    Object parseToken(String token);
+    AuthResponse verifyMicrosoftToken(VerifyMicrosoftTokenRequest request);
+    AuthResponse refreshAccessToken(String refreshToken);
+    void logout(String email);
 }

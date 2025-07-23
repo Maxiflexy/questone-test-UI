@@ -1,122 +1,79 @@
 package com.fundquest.auth.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
+import static jakarta.persistence.GenerationType.UUID;
+
+@Entity
+@Table(name = "user_tbl")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
-@NoArgsConstructor
-@Entity
-@Table(name = "users_tbl", indexes = {
-        @Index(name = "idx_email", columnList = "email"),
-        @Index(name = "idx_microsoft_id", columnList = "microsoftId")
-})
+@EntityListeners(AuditingEntityListener.class)
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = UUID)
+    @Column(name = "id", updatable = false, nullable = false)
+    private String id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    @Column(nullable = false)
-    private String name;
-
-    @Column(name = "microsoft_id", nullable = false, unique = true)
+    @Column(name = "microsoft_id", unique = true, nullable = false)
+    @NotBlank(message = "Microsoft ID cannot be blank")
     private String microsoftId;
 
-    @Column(name = "given_name")
-    private String givenName;
+    @Column(name = "email", unique = true, nullable = false)
+    @Email(message = "Email should be valid")
+    @NotBlank(message = "Email cannot be blank")
+    private String email;
 
-    @Column(name = "family_name")
-    private String familyName;
+    @Column(name = "name")
+    @NotBlank(message = "Name cannot be blank")
+    private String name;
 
     @Column(name = "preferred_username")
     private String preferredUsername;
 
-    @Column(name = "job_title")
-    private String jobTitle;
-
-    @Column(name = "department")
-    private String department;
-
-    @Column(name = "office_location")
-    private String officeLocation;
-
-    @Column(name = "mobile_phone")
-    private String mobilePhone;
-
-    @Column(name = "business_phones")
-    private String businessPhones;
-
-    @Column(name = "profile_picture_url")
-    private String profilePictureUrl;
-
-    @Column(name = "is_active", nullable = false)
+    @Column(name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
-
-    @Column(name = "is_email_verified", nullable = false)
-    private Boolean isEmailVerified = false;
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
-    @Column(name = "login_count", nullable = false)
-    private Long loginCount = 0L;
-
-    @CreationTimestamp
+    @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @LastModifiedDate
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "created_by")
-    private String createdBy;
-
-    @Column(name = "updated_by")
-    private String updatedBy;
-
-    public User(String email, String name, String microsoftId) {
-        this.email = email;
-        this.name = name;
-        this.microsoftId = microsoftId;
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (updatedAt == null) {
+            updatedAt = LocalDateTime.now();
+        }
     }
 
-    public void incrementLoginCount() {
-        this.loginCount = (this.loginCount == null ? 0L : this.loginCount) + 1;
-    }
-
-    public boolean isActive() {
-        return Boolean.TRUE.equals(this.isActive);
-    }
-
-    public boolean isEmailVerified() {
-        return Boolean.TRUE.equals(this.isEmailVerified);
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     public void updateLastLogin() {
         this.lastLogin = LocalDateTime.now();
-    }
-
-    public void activate() {
-        this.isActive = true;
-    }
-
-    public void deactivate() {
-        this.isActive = false;
-    }
-
-    public void verifyEmail() {
-        this.isEmailVerified = true;
     }
 }
