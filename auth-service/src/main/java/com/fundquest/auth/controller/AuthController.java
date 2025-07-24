@@ -4,14 +4,10 @@ import com.fundquest.auth.constants.AppConstants;
 import com.fundquest.auth.dto.request.VerifyMicrosoftTokenRequest;
 import com.fundquest.auth.dto.response.ApiResponse;
 import com.fundquest.auth.dto.response.AuthResponse;
-import com.fundquest.auth.entity.User;
 import com.fundquest.auth.exception.InvalidTokenException;
 import com.fundquest.auth.service.AuthService;
-import com.fundquest.auth.service.JwtService;
-import com.fundquest.auth.service.UserService;
 import com.fundquest.auth.util.AuthResponseHelper;
 import com.fundquest.auth.util.CookieHelper;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -22,8 +18,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import static com.fundquest.auth.constants.AppConstants.*;
+
 @RestController
-@RequestMapping(AppConstants.AUTH_BASE_PATH)
+@RequestMapping(AUTH_BASE_PATH)
 @RequiredArgsConstructor
 @Slf4j
 public class AuthController {
@@ -32,7 +30,7 @@ public class AuthController {
     private final AuthResponseHelper authResponseHelper;
     private final CookieHelper cookieHelper;
 
-    @PostMapping("/microsoft/verify")
+    @PostMapping(MICROSOFT_VERIFY_ENDPOINT)
     public ResponseEntity<ApiResponse<AuthResponse>> verifyMicrosoftToken(
             @Valid @RequestBody VerifyMicrosoftTokenRequest request,
             HttpServletResponse response) {
@@ -48,7 +46,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(authResponse));
     }
 
-    @PostMapping("/refresh")
+    @PostMapping(REFRESH_TOKEN_ENDPOINT)
     public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(HttpServletRequest request) {
 
         log.info("Received token refresh request");
@@ -66,7 +64,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(authResponse));
     }
 
-    @PostMapping("/logout")
+    @PostMapping(LOGOUT_ENDPOINT)
     public ResponseEntity<ApiResponse<String>> logout(HttpServletResponse response) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -75,6 +73,6 @@ public class AuthController {
         }
         authResponseHelper.clearAuthSession(response);
         log.info("Successfully logged out user");
-        return ResponseEntity.ok(ApiResponse.success(AppConstants.LOGOUT_SUCCESS));
+        return ResponseEntity.ok(ApiResponse.success(LOGOUT_SUCCESS));
     }
 }

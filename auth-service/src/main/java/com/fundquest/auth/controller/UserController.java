@@ -14,15 +14,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import static com.fundquest.auth.constants.AppConstants.USER_PROFILE_ENDPOINT;
+
 @RestController
-@RequestMapping("/api/v1/user")
+@RequestMapping(USER_PROFILE_ENDPOINT)
 @RequiredArgsConstructor
 @Slf4j
 public class UserController {
 
     private final UserService userService;
 
-    @GetMapping("/profile")
+    @GetMapping()
     public ResponseEntity<ApiResponse<UserProfileResponse>> getUserProfile() {
 
         log.info("Received user profile request");
@@ -46,5 +48,14 @@ public class UserController {
         log.info("Successfully retrieved user profile for: {}", email);
 
         return ResponseEntity.ok(ApiResponse.success(profileResponse));
+    }
+
+    @GetMapping("/test")
+    public ResponseEntity<?> test() {
+
+        log.info("Received user profile request");
+
+
+        return ResponseEntity.ok("Message received!!!");
     }
 }

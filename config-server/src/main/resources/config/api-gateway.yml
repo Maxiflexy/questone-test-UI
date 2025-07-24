@@ -12,11 +12,11 @@ spring:
             locator:
               enabled: true
               lower-case-service-id: true
-          routes:
-            - id: eureka-server
-              uri: http://localhost:8761
-              predicates:
-                - Path=/eureka/**
+#          routes:
+#            - id: eureka-server
+#              uri: http://localhost:8761
+#              predicates:
+#                - Path=/eureka/**
           default-filters:
             - name: AddResponseHeader
               args:
@@ -25,7 +25,7 @@ spring:
             - name: AddResponseHeader
               args:
                 name: Access-Control-Allow-Methods
-                value: "GET,POST,PUT,DELETE,OPTIONS"
+                value: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
             - name: AddResponseHeader
               args:
                 name: Access-Control-Allow-Headers
