@@ -61,11 +61,30 @@ export const authService = {
       try {
         console.log('Starting Microsoft token verification for:', authCode.substring(0, 10) + '...');
 
-        const response = await apiClient.post('/auth/microsoft/verify', {
+        const response = await apiClient.post('/api/v1/auth/microsoft/verify', {
           authCode: authCode
         });
 
-        console.log('Backend response:', response.data);
+        // ADDED: Enhanced console logging for verify endpoint response
+        console.log('=== VERIFY ENDPOINT RESPONSE ===');
+        console.log('Full Response:', response);
+        console.log('Response Data:', response.data);
+        console.log('Response Status:', response.status);
+        console.log('Response Headers:', response.headers);
+
+        if (response.data?.data) {
+          console.log('Token Data:', {
+            accessToken: response.data.data.accessToken ? `${response.data.data.accessToken.substring(0, 20)}...` : 'Not provided',
+            tokenType: response.data.data.tokenType,
+            expiresIn: response.data.data.expiresIn
+          });
+
+          // ADDED: Log user data from verify endpoint
+          if (response.data.data.user) {
+            console.log('User Data from Verify Endpoint:', response.data.data.user);
+          }
+        }
+        console.log('=== END VERIFY ENDPOINT RESPONSE ===');
 
         if (response.data?.success && response.data?.data) {
           const { accessToken, expiresIn, tokenType } = response.data.data;
@@ -75,7 +94,7 @@ export const authService = {
           localStorage.setItem('tokenType', tokenType);
           localStorage.setItem('expiresIn', expiresIn.toString());
 
-          console.log('Tokens stored successfully');
+          console.log('Tokens stored successfully in localStorage');
 
           return {
             success: true,
@@ -115,13 +134,60 @@ export const authService = {
     return requestPromise;
   },
 
+  refreshToken: async () => {
+    try {
+      console.log('Refreshing access token...');
+
+      // NEW: Added refresh token endpoint
+      const response = await apiClient.post('/api/v1/auth/refresh');
+
+      console.log('Refresh token response:', response.data);
+
+      if (response.data?.success && response.data?.data) {
+        const { accessToken, expiresIn, tokenType } = response.data.data;
+
+        // Store new access token in localStorage
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('tokenType', tokenType);
+        localStorage.setItem('expiresIn', expiresIn.toString());
+
+        console.log('New tokens stored successfully');
+
+        return {
+          success: true,
+          data: response.data.data
+        };
+      }
+
+      throw new Error('Invalid refresh response format');
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+
+      let errorMessage = 'Token refresh failed';
+      if (error.response?.data?.error?.message) {
+        errorMessage = error.response.data.error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      return {
+        success: false,
+        error: {
+          code: error.response?.data?.error?.code || 'REFRESH_ERROR',
+          message: errorMessage
+        }
+      };
+    }
+  },
+
   // Logout with backend call to clear cookies
   logout: async () => {
     try {
       console.log('Logging out...');
 
-      // Call backend logout endpoint to clear cookies
-      await apiClient.post('/auth/logout');
+      await apiClient.post('/api/v1/auth/logout');
 
       console.log('Backend logout successful');
     } catch (error) {
@@ -156,7 +222,7 @@ export const userService = {
     try {
       console.log('Fetching user profile...');
 
-      const response = await apiClient.get('/api/v1/user/profile');
+      const response = await apiClient.get('/api/v1/auth/user/profile');
 
       console.log('Profile response:', response.data);
 
@@ -192,7 +258,7 @@ export const userService = {
 export const healthService = {
   check: async () => {
     try {
-      const response = await apiClient.get('/auth/health'); // Updated path
+      const response = await apiClient.get('/api/v1/auth/health');
       return {
         success: true,
         data: response.data
