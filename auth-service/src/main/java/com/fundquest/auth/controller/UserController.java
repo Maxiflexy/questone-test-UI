@@ -1,8 +1,7 @@
 package com.fundquest.auth.controller;
 
-import com.fundquest.auth.constants.AppConstants;
 import com.fundquest.auth.dto.response.ApiResponse;
-import com.fundquest.auth.dto.response.UserProfileResponse;
+import com.fundquest.auth.dto.response.AuthUserData;
 import com.fundquest.auth.entity.User;
 import com.fundquest.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,7 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping()
-    public ResponseEntity<ApiResponse<UserProfileResponse>> getUserProfile() {
+    public ResponseEntity<ApiResponse<AuthUserData>> getUserProfile() {
 
         log.info("Received user profile request");
 
@@ -37,7 +36,7 @@ public class UserController {
 
         User user = userService.findByEmail(email);
 
-        UserProfileResponse profileResponse = UserProfileResponse.builder()
+        AuthUserData profileResponse = AuthUserData.builder()
                 .email(user.getEmail())
                 .name(user.getName())
                 .microsoftId(user.getMicrosoftId())

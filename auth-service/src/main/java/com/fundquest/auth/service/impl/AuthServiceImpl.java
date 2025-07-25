@@ -5,6 +5,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fundquest.auth.constants.AppConstants;
 import com.fundquest.auth.dto.request.VerifyMicrosoftTokenRequest;
 import com.fundquest.auth.dto.response.AuthResponse;
+import com.fundquest.auth.dto.response.AuthUserData;
 import com.fundquest.auth.entity.User;
 import com.fundquest.auth.exception.InvalidTokenException;
 import com.fundquest.auth.exception.TokenExtractionException;
@@ -12,11 +13,14 @@ import com.fundquest.auth.service.AuthService;
 import com.fundquest.auth.service.JwtService;
 import com.fundquest.auth.service.MicrosoftOAuthService;
 import com.fundquest.auth.service.UserService;
+import com.fundquest.auth.util.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +31,7 @@ public class AuthServiceImpl implements AuthService {
     private final MicrosoftOAuthService microsoftOAuthService;
     private final UserService userService;
     private final JwtService jwtService;
+    private final UserMapper userMapper;
 
     @Override
     public AuthResponse verifyMicrosoftToken(VerifyMicrosoftTokenRequest request) {
@@ -61,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
                     .accessToken(accessToken)
                     .expiresIn(AppConstants.ACCESS_TOKEN_EXPIRY / 1000) // Convert to seconds
                     .tokenType(AppConstants.BEARER_TOKEN_TYPE)
+                    .user(userMapper.toAuthUserData(user))
                     .build();
 
         } catch (Exception e) {
@@ -81,12 +87,11 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String email = jwtService.extractEmailFromToken(refreshToken);
-        User user = userService.findByEmail(email);
 
-        // Update last login
+        var user = userService.findByEmail(email);
+
         userService.updateLastLogin(email);
 
-        // Generate new access token
         String accessToken = jwtService.generateAccessToken(user);
 
         log.info("Successfully refreshed access token for user: {}", email);
@@ -95,6 +100,7 @@ public class AuthServiceImpl implements AuthService {
                 .accessToken(accessToken)
                 .expiresIn(AppConstants.ACCESS_TOKEN_EXPIRY / 1000)
                 .tokenType(AppConstants.BEARER_TOKEN_TYPE)
+                .user(userMapper.toAuthUserData(user))
                 .build();
     }
 

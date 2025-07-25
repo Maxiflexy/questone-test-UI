@@ -7,8 +7,10 @@ spring:
 
 eureka:
   instance:
-    hostname: localhost
+    hostname: eureka-server
     prefer-ip-address: false
+    health-check-url-path: /actuator/health
+    status-page-url-path: /actuator/info
   client:
     register-with-eureka: false
     fetch-registry: false
@@ -18,18 +20,32 @@ eureka:
     enable-self-preservation: true
     eviction-interval-timer-in-ms: 10000
     renewal-percent-threshold: 0.85
+    # Disable delta updates for better reliability
+    disable-delta: false
+    # Response cache settings
+    response-cache-update-interval-ms: 30000
+    response-cache-auto-expiration-in-seconds: 180
 
+# Management Endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,env
+        include: health,info,env,refresh,metrics
   endpoint:
     health:
       show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: false
 
+# Logging Configuration
 logging:
   level:
     com.netflix.eureka: INFO
     com.netflix.discovery: INFO
-    org.springframework.cloud.gateway: INFO
+    org.springframework.cloud: INFO
+    ROOT: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

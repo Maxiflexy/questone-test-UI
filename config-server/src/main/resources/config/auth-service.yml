@@ -11,11 +11,21 @@ spring:
   application:
     name: auth-service
 
+  # External Database Configuration
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/fundquest_auth}
+    url: ${DATABASE_URL:jdbc:postgresql://91.134.107.175:5432/fundquest_auth}
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
+
+    # Connection pool settings for external database
+    hikari:
+      connection-timeout: 20000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      leak-detection-threshold: 60000
 
   jpa:
     hibernate:
@@ -25,6 +35,11 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
 
   jackson:
     serialization:
@@ -35,13 +50,15 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://eureka-server:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+    registry-fetch-interval-seconds: 30
   instance:
     prefer-ip-address: true
     lease-renewal-interval-in-seconds: 30
     lease-expiration-duration-in-seconds: 90
+    health-check-url-path: /actuator/health
 
 # Azure OAuth Configuration
 azure:
@@ -67,18 +84,21 @@ logging:
     org.hibernate.SQL: WARN
     org.springframework.cloud: INFO
     com.netflix.eureka: WARN
+    org.springframework.web.reactive.function.client: DEBUG
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-
-
 
 # Management Endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,env,refresh
+        include: health,info,env,refresh,metrics
   endpoint:
     health:
       show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: false

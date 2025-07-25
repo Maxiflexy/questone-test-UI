@@ -36,6 +36,7 @@ public class AuthController {
             HttpServletResponse response) {
 
         log.info("Received Microsoft token verification request");
+        System.out.println("Received Microsoft token verification request");
 
         AuthResponse authResponse = authService.verifyMicrosoftToken(request);
 

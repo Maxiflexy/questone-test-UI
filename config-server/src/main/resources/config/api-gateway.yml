@@ -12,42 +12,39 @@ spring:
             locator:
               enabled: true
               lower-case-service-id: true
-#          routes:
-#            - id: eureka-server
-#              uri: http://localhost:8761
-#              predicates:
-#                - Path=/eureka/**
-          default-filters:
-            - name: AddResponseHeader
-              args:
-                name: Access-Control-Allow-Origin
-                value: "*"
-            - name: AddResponseHeader
-              args:
-                name: Access-Control-Allow-Methods
-                value: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
-            - name: AddResponseHeader
-              args:
-                name: Access-Control-Allow-Headers
-                value: "*"
+
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://eureka-server:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+    registry-fetch-interval-seconds: 30
   instance:
     prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+    health-check-url-path: /actuator/health
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000,http://91.134.107.175:3000,https://91.134.107.175:3000}
+  allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS,PATCH}
+  allowed-headers: ${CORS_ALLOWED_HEADERS:*}
+  allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+  max-age: ${CORS_MAX_AGE:3600}
+
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,env,gateway,refresh
+        include: health,info,env,gateway,refresh,metrics
   endpoint:
     health:
       show-details: always
+    gateway:
+      enabled: true
 
 logging:
   level:

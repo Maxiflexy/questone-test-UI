@@ -20,8 +20,8 @@ WORKDIR /app
 # Copy the JAR file from build stage
 COPY --from=build /app/target/*.jar app.jar
 
-# Expose the correct port for auth-service
-EXPOSE 8010
+# Expose the port
+EXPOSE 8080
 
 # Set JVM options for better resource usage
 ENV JAVA_OPTS="-Xmx512m -Xms256m"

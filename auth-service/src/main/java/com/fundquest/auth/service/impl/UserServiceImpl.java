@@ -64,7 +64,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void updateLastLogin(String email) {
-        userRepository.updateLastLoginByEmail(email, LocalDateTime.now());
         log.debug("Updated last login for user with email: {}", email);
+        userRepository.updateLastLoginByEmail(email, LocalDateTime.now());
     }
 }

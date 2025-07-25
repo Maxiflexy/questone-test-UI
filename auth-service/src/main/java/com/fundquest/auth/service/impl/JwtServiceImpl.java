@@ -32,7 +32,7 @@ public class JwtServiceImpl implements JwtService {
     public String generateAccessToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put(AppConstants.CLAIM_EMAIL, user.getEmail());
-        claims.put(AppConstants.CLAIM_USER_ID, user.getId().toString());
+        claims.put(AppConstants.CLAIM_USER_ID, user.getId());
         claims.put(AppConstants.CLAIM_TYPE, AppConstants.TOKEN_TYPE_ACCESS);
 
         return createToken(claims, user.getEmail(), AppConstants.ACCESS_TOKEN_EXPIRY);
@@ -42,7 +42,7 @@ public class JwtServiceImpl implements JwtService {
     public String generateRefreshToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put(AppConstants.CLAIM_EMAIL, user.getEmail());
-        claims.put(AppConstants.CLAIM_USER_ID, user.getId().toString());
+        claims.put(AppConstants.CLAIM_USER_ID, user.getId());
         claims.put(AppConstants.CLAIM_TYPE, AppConstants.TOKEN_TYPE_REFRESH);
 
         return createToken(claims, user.getEmail(), AppConstants.REFRESH_TOKEN_EXPIRY);

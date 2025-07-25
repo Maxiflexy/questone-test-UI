@@ -1,0 +1,46 @@
+# Maven build artifacts
+target/
+*.jar
+*.war
+*.ear
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.local
+.env.prod
+
+# Test files
+**/*Test.java
+**/*Tests.java
+**/test/
+
+# Maven wrapper files (keep for Docker build)
+!.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+
+# Documentation
+README.md
+*.md
+
+# Docker files in subdirectories
+**/Dockerfile
+**/docker-compose.yml
