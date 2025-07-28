@@ -18,6 +18,49 @@
 .env.test.local
 .env.production.local
 
+# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+
+# runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# optional npm cache directory
+.npm
+
+# optional REPL history
+.node_repl_history
+
+# output of 'npm pack'
+*.tgz
+
+# yarn integrity file
+.yarn-integrity
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IMPORTANT: These JSON files should be INCLUDED in git
+# !package.json          # Already included by default
+# !package-lock.json     # Already included by default
+# !tsconfig.json         # Already included by default
+# !*.json                # This would include all JSON files (already default behavior)
+
+# Note: JSON files are included by default unless explicitly ignored above
+# The package.json and package-lock.json files are essential for deployment
