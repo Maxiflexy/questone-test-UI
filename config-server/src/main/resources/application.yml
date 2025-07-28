@@ -1,3 +1,39 @@
+#server:
+#  port: 8888
+#
+#spring:
+#  application:
+#    name: config-server
+#  profiles:
+#    active: native
+#  cloud:
+#    config:
+#      server:
+#        native:
+#          search-locations: classpath:/config
+#        health:
+#          repositories:
+#            eureka-server:
+#              label: master
+#              name: eureka-server
+#              profiles: default
+#
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health,info,env,configprops
+#  endpoint:
+#    health:
+#      show-details: always
+#
+#logging:
+#  level:
+#    org.springframework.cloud.config: DEBUG
+#    org.springframework.web: DEBUG
+#
+
+
 server:
   port: 8888
 
@@ -11,6 +47,30 @@ spring:
       server:
         native:
           search-locations: classpath:/config
+        # KEY FIX: Property overrides inject environment variables into client configs
+        overrides:
+          azure.client-id: ${AZURE_CLIENT_ID:your_clientId}
+          azure.client-secret: ${AZURE_CLIENT_SECRET:your_secret}
+          azure.tenant-id: ${AZURE_TENANT_ID:your_tenantId}
+          azure.redirect-uri: ${AZURE_REDIRECT_URI:http://localhost:3000/auth/callbacks}
+
+          # JWT Configuration
+          jwt.secret: ${JWT_SECRET:mySecretKey12345678901234567890123456789012345678901234567890}
+
+          # Database Configuration
+          spring.datasource.url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/fundquest_auth}
+          spring.datasource.username: ${DATABASE_USERNAME:postgres}
+          spring.datasource.password: ${DATABASE_PASSWORD:password}
+
+          # CORS Configuration for auth-service
+          app.cors.allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,https://yourdomain.com}
+
+          # CORS Configuration for api-gateway
+          cors.allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
+          cors.allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS,PATCH}
+          cors.allowed-headers: ${CORS_ALLOWED_HEADERS:*}
+          cors.allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+          cors.max-age: ${CORS_MAX_AGE:3600}
         health:
           repositories:
             eureka-server:
@@ -31,3 +91,4 @@ logging:
   level:
     org.springframework.cloud.config: DEBUG
     org.springframework.web: DEBUG
+    org.springframework.core.env: DEBUG
