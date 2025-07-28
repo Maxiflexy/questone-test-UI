@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  fundquest-auth-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fundquest-auth-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_AZURE_TENANT_ID=${REACT_APP_AZURE_TENANT_ID}
+      - REACT_APP_AZURE_CLIENT_ID=${REACT_APP_AZURE_CLIENT_ID}
+      - REACT_APP_REDIRECT_URI=${REACT_APP_REDIRECT_URI}
+      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    volumes:
+      # Mount source code for hot reloading during development
+      - ./src:/app/src
+      - ./public:/app/public
+      # Prevent node_modules from being overwritten
+      - /app/node_modules
+    networks:
+      - fundquest-network
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+# Use the same network as your backend services
+networks:
+  fundquest-network:
+    external: true
