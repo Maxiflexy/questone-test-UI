@@ -1,3 +1,4 @@
 .idea
 
 fundquest-auth-frontend/node_modules
+.env

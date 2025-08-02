@@ -1,0 +1,67 @@
+#spring:
+#  application:
+#    name: email-service
+#  config:
+#    import: "configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+#  cloud:
+#    config:
+#      fail-fast: true
+#      retry:
+#        initial-interval: 1000
+#        max-attempts: 6
+#        max-interval: 2000
+#        multiplier: 1.1
+#
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health,info,env,refresh
+
+server:
+  port: 8020
+
+spring:
+  application:
+    name: email-service
+  cloud:
+    azure:
+      compatibility-verifier:
+        enabled: false
+
+# Azure Configuration
+azure:
+  client-id: ${AZURE_EMAIL_CLIENT_ID:687a45e1-1778-42dd-8570-58e34a27f265}
+  client-secret: ${AZURE_EMAIL_CLIENT_SECRET}
+  tenant-id: ${AZURE_EMAIL_TENANT_ID:ac899a80-3bdc-43fd-8ffc-3a25b13612c3}
+
+# Email Configuration
+email:
+  from-address: onyekachi.ejemba@fundquestnigeria.com
+  from-name: FundQuest Support
+  reply-to: support@fundquest.com
+  service-account: ${EMAIL_SERVICE_ACCOUNT:noreply@fundquest.com}
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      #defaultZone: http://eureka-server:8761/eureka/
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+    registry-fetch-interval-seconds: 30
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+    health-check-url-path: /actuator/health
+
+# Logging
+logging:
+  level:
+    com.fundquest.emailtest: INFO
+    com.microsoft.graph: WARN
+    com.azure: WARN
+  pattern:
+    console: "%d{HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

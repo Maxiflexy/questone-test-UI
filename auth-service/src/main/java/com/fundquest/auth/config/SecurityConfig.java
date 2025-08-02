@@ -37,7 +37,8 @@ public class SecurityConfig {
                 //.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/microsoft/verify", "/api/v1/auth/refresh").permitAll()
+                        .requestMatchers("/api/v1/auth/microsoft/verify", "/api/v1/auth/refresh",
+                                "/api/v1/auth/user/profile/test").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
