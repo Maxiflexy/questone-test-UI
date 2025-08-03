@@ -7,6 +7,7 @@ import com.fundquest.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,12 +50,14 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(profileResponse));
     }
 
+    /**
+     * Test endpoint that only SUPER_ADMIN role can access
+     * Demonstrates role-based authorization using hasRole()
+     */
     @GetMapping("/test")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> test() {
-
-        log.info("Received user profile request");
-
-
+        log.info("Message received!!!");
         return ResponseEntity.ok("Message received!!!");
     }
 }

@@ -12,13 +12,22 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, UUID> {
+public interface UserRepository extends JpaRepository<User, String> {
 
     Optional<User> findByEmail(String email);
 
     Optional<User> findByMicrosoftId(String microsoftId);
 
     Optional<User> findByEmailAndIsActiveTrue(String email);
+
+    @Query("SELECT u FROM User u JOIN FETCH u.role r JOIN FETCH u.permissions p WHERE u.email = :email AND u.isActive = true")
+    Optional<User> findByEmailWithRoleAndPermissions(@Param("email") String email);
+
+    @Query("SELECT u FROM User u JOIN FETCH u.role r JOIN FETCH u.permissions p WHERE u.id = :userId AND u.isActive = true")
+    Optional<User> findByIdWithRoleAndPermissions(@Param("userId") UUID userId);
+
+    @Query("SELECT u FROM User u JOIN FETCH u.role r JOIN FETCH u.permissions p WHERE u.microsoftId = :microsoftId")
+    Optional<User> findByMicrosoftIdWithRoleAndPermissions(@Param("microsoftId") String microsoftId);
 
     boolean existsByEmail(String email);
 

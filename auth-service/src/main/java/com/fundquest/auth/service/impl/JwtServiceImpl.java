@@ -1,6 +1,7 @@
 package com.fundquest.auth.service.impl;
 
 import com.fundquest.auth.constants.AppConstants;
+import com.fundquest.auth.entity.Permission;
 import com.fundquest.auth.entity.User;
 import com.fundquest.auth.service.JwtService;
 import io.jsonwebtoken.*;
@@ -13,8 +14,10 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -30,22 +33,36 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public String generateAccessToken(User user) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put(AppConstants.CLAIM_EMAIL, user.getEmail());
-        claims.put(AppConstants.CLAIM_USER_ID, user.getId());
-        claims.put(AppConstants.CLAIM_TYPE, AppConstants.TOKEN_TYPE_ACCESS);
+        log.debug("Generating access token for user: {}", user.getEmail());
+
+        Map<String, Object> claims = createBaseClaims(user, AppConstants.TOKEN_TYPE_ACCESS);
+
+        // Add role and user-specific permissions
+        if (user.getRole() != null) {
+            claims.put(AppConstants.CLAIM_ROLE, user.getRole().getName());
+        }
+
+        // Add user's specific permissions (not role-based)
+        List<String> permissions = user.getPermissions().stream()
+                .map(Permission::getName)
+                .collect(Collectors.toList());
+        claims.put(AppConstants.CLAIM_PERMISSIONS, permissions);
 
         return createToken(claims, user.getEmail(), AppConstants.ACCESS_TOKEN_EXPIRY);
     }
 
     @Override
     public String generateRefreshToken(User user) {
+        Map<String, Object> claims = createBaseClaims(user, AppConstants.TOKEN_TYPE_REFRESH);
+        return createToken(claims, user.getEmail(), AppConstants.REFRESH_TOKEN_EXPIRY);
+    }
+
+    private Map<String, Object> createBaseClaims(User user, String tokenType) {
         Map<String, Object> claims = new HashMap<>();
         claims.put(AppConstants.CLAIM_EMAIL, user.getEmail());
         claims.put(AppConstants.CLAIM_USER_ID, user.getId());
-        claims.put(AppConstants.CLAIM_TYPE, AppConstants.TOKEN_TYPE_REFRESH);
-
-        return createToken(claims, user.getEmail(), AppConstants.REFRESH_TOKEN_EXPIRY);
+        claims.put(AppConstants.CLAIM_TYPE, tokenType);
+        return claims;
     }
 
     private String createToken(Map<String, Object> claims, String subject, long expiration) {
@@ -67,7 +84,7 @@ public class JwtServiceImpl implements JwtService {
                     .parseClaimsJws(token);
             return true;
         } catch (ExpiredJwtException e) {
-            log.error("JWT token is expired: {}", e.getMessage());
+            log.debug("JWT token is expired: {}", e.getMessage());
         } catch (UnsupportedJwtException e) {
             log.error("JWT token is unsupported: {}", e.getMessage());
         } catch (MalformedJwtException e) {
@@ -93,6 +110,17 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public String extractTokenType(String token) {
         return extractClaim(token, claims -> claims.get(AppConstants.CLAIM_TYPE, String.class));
+    }
+
+    @Override
+    public String extractRoleFromToken(String token) {
+        return extractClaim(token, claims -> claims.get(AppConstants.CLAIM_ROLE, String.class));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<String> extractPermissionsFromToken(String token) {
+        return extractClaim(token, claims -> (List<String>) claims.get(AppConstants.CLAIM_PERMISSIONS));
     }
 
     @Override

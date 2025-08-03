@@ -2,6 +2,8 @@ package com.fundquest.auth.service;
 
 import com.fundquest.auth.entity.User;
 
+import java.util.List;
+
 public interface JwtService {
     String generateAccessToken(User user);
     String generateRefreshToken(User user);
@@ -10,4 +12,6 @@ public interface JwtService {
     String extractUserIdFromToken(String token);
     boolean isTokenExpired(String token);
     String extractTokenType(String token);
+    String extractRoleFromToken(String token);
+    List<String> extractPermissionsFromToken(String token);
 }

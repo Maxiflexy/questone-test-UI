@@ -12,6 +12,8 @@ public final class AppConstants {
     public static final String REFRESH_TOKEN_ENDPOINT = "/refresh";
     public static final String LOGOUT_ENDPOINT = "/logout";
     public static final String USER_PROFILE_ENDPOINT = "/api/v1/auth/user/profile";
+    public static final String PERMISSIONS_ENDPOINT = "/api/v1/auth/permissions";
+    public static final String ROLE_ENDPOINT = "/api/v1/auth/roles";
 
     // JWT Constants
     public static final String JWT_HEADER_PREFIX = "Bearer ";
@@ -31,14 +33,17 @@ public final class AppConstants {
     public static final String INVALID_AUTH_CODE = "INVALID_AUTH_CODE";
     public static final String AUTH_CODE_EXPIRED = "AUTH_CODE_EXPIRED";
     public static final String INVALID_TENANT = "INVALID_TENANT";
-    public static final String NO_REFRESH_TOKEN = "NO_REFRESH_TOKEN";//
+    public static final String NO_REFRESH_TOKEN = "NO_REFRESH_TOKEN";
     public static final String INVALID_REFRESH_TOKEN = "INVALID_REFRESH_TOKEN";
     public static final String UNAUTHORIZED = "UNAUTHORIZED";
+    public static final String USER_NOT_INVITED = "USER_NOT_INVITED";
 
     // JWT Claims
     public static final String CLAIM_EMAIL = "email";
     public static final String CLAIM_USER_ID = "userId";
     public static final String CLAIM_TYPE = "type";
+    public static final String CLAIM_ROLE = "role";
+    public static final String CLAIM_PERMISSIONS = "permissions";
     public static final String TOKEN_TYPE_ACCESS = "ACCESS";
     public static final String TOKEN_TYPE_REFRESH = "REFRESH";
 
@@ -47,4 +52,7 @@ public final class AppConstants {
 
     // Token Type
     public static final String BEARER_TOKEN_TYPE = "Bearer";
+
+    // Default Admin Email
+    public static final String DEFAULT_SUPER_ADMIN_EMAIL = "onyekachi.ejemba@fundquestnigeria.com";
 }

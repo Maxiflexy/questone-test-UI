@@ -24,6 +24,13 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getErrorCode(), ex.getMessage()));
     }
 
+    @ExceptionHandler(UserNotInvitedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUserNotInvitedException(UserNotInvitedException ex) {
+        log.error("User not invited: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getErrorCode(), ex.getMessage()));
+    }
+
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvalidTokenException(InvalidTokenException ex) {
         log.error("Invalid token: {}", ex.getMessage());
