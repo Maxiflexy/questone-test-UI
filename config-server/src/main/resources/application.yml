@@ -1,39 +1,3 @@
-#server:
-#  port: 8888
-#
-#spring:
-#  application:
-#    name: config-server
-#  profiles:
-#    active: native
-#  cloud:
-#    config:
-#      server:
-#        native:
-#          search-locations: classpath:/config
-#        health:
-#          repositories:
-#            eureka-server:
-#              label: master
-#              name: eureka-server
-#              profiles: default
-#
-#management:
-#  endpoints:
-#    web:
-#      exposure:
-#        include: health,info,env,configprops
-#  endpoint:
-#    health:
-#      show-details: always
-#
-#logging:
-#  level:
-#    org.springframework.cloud.config: DEBUG
-#    org.springframework.web: DEBUG
-#
-
-
 server:
   port: 8888
 

@@ -13,9 +13,10 @@ spring:
 
   # External Database Configuration
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://91.134.107.175:5432/fundquest_auth}
-    username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:password}
+    #url: ${DATABASE_URL:jdbc:postgresql://91.134.107.175:5432/fundquest_auth}
+    url: jdbc:postgresql://localhost:5432/fundquest_auth
+    username: postgres
+    password: password
     driver-class-name: org.postgresql.Driver
 
     # Connection pool settings for external database
@@ -26,6 +27,19 @@ spring:
       idle-timeout: 300000
       max-lifetime: 1200000
       leak-detection-threshold: 60000
+
+    # Flyway Configuration
+    flyway:
+      enabled: true
+      validate-on-migrate: true
+      out-of-order: false
+      locations: classpath:db/migration
+      baseline-on-migrate: true
+      baseline-version: 0
+      encoding: UTF-8
+      sql-migration-prefix: V
+      sql-migration-separator: __
+      sql-migration-suffixes: .sql
 
   jpa:
     hibernate:
@@ -40,17 +54,51 @@ spring:
         order_inserts: true
         order_updates: true
         generate_statistics: false
+        hbm2ddl:
+          auto: validate
 
   jackson:
     serialization:
       write-dates-as-timestamps: false
     time-zone: UTC
 
+
+# Swagger/OpenAPI Configuration
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    try-it-out-enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    filter: true
+    syntax-highlight:
+      activated: true
+      theme: monokai
+    show-extensions: true
+    show-common-extensions: true
+    default-models-expand-depth: 1
+    default-model-expand-depth: 1
+    display-request-duration: true
+    doc-expansion: none
+    persist-authorization: true
+    disable-swagger-default-url: true
+  show-actuator: false
+  writer-with-default-pretty-printer: true
+  override-with-generic-response: false
+  cache:
+    disabled: false
+  use-fqn: false
+
 # Eureka Client Configuration
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka-server:8761/eureka/
+      #defaultZone: http://eureka-server:8761/eureka/
+      defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
     registry-fetch-interval-seconds: 30
@@ -85,6 +133,8 @@ logging:
     org.springframework.cloud: INFO
     com.netflix.eureka: WARN
     org.springframework.web.reactive.function.client: DEBUG
+    org.springdoc: DEBUG
+    io.swagger: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
@@ -94,10 +144,12 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,env,refresh,metrics
+        include: health,info,env,refresh,metrics,openapi,swaggerui
   endpoint:
     health:
       show-details: always
+    flyway:
+      enabled: true
   metrics:
     export:
       prometheus:

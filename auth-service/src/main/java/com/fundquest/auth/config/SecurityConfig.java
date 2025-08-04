@@ -42,7 +42,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/microsoft/verify", "/api/v1/auth/refresh",
                                 "/api/v1/auth/user/profile/test").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
+                                "/swagger-resources/**", "/webjars/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
