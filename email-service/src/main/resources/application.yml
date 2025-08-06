@@ -32,15 +32,16 @@ spring:
 # Azure Configuration
 azure:
   client-id: ${AZURE_EMAIL_CLIENT_ID:687a45e1-1778-42dd-8570-58e34a27f265}
-  client-secret: ${AZURE_EMAIL_CLIENT_SECRET}
+  client-secret: ${AZURE_EMAIL_CLIENT_SECRET:4Al8Q~Efq-Lh_yGmzKQMx3IE4RtMfEYWgZLI9ckH}
   tenant-id: ${AZURE_EMAIL_TENANT_ID:ac899a80-3bdc-43fd-8ffc-3a25b13612c3}
 
 # Email Configuration
 email:
   from-address: onyekachi.ejemba@fundquestnigeria.com
-  from-name: FundQuest Support
+  #from-address: noreply@fundquestnigeria.com
+  from-name: FundQuest Holdings
   reply-to: support@fundquest.com
-  service-account: ${EMAIL_SERVICE_ACCOUNT:noreply@fundquest.com}
+  service-account: ${EMAIL_SERVICE_ACCOUNT:noreply@fundquestnigeria.com}
 
 # Eureka Client Configuration
 eureka:
