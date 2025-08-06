@@ -1,5 +1,6 @@
 package com.fundquest.auth.service.permission;
 
+import com.fundquest.auth.dto.response.PermissionResponse;
 import com.fundquest.auth.entity.Permission;
 
 import java.util.List;
@@ -53,12 +54,12 @@ public interface PermissionService {
      * Get all permissions
      * @return list of all permissions
      */
-    List<Permission> findAll();
+    List<PermissionResponse> findAll();
 
     /**
      * Find permission by ID
      * @param id permission ID
      * @return optional permission
      */
-    Optional<Permission> findById(Long id);
+    PermissionResponse findById(Long id);
 }

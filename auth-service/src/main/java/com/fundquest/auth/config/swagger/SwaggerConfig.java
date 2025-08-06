@@ -17,11 +17,9 @@ import java.util.List;
 @Configuration
 public class SwaggerConfig {
 
-    @Value("${server.port:8010}")
-    private String serverPort;
-
-    @Value("${spring.application.name}")
-    private String applicationName;
+    // API Gateway port for routing requests
+    @Value("${api.gateway.port:8080}")
+    private String gatewayPort;
 
     private static final String BEARER_AUTH = "bearerAuth";
 
@@ -30,9 +28,11 @@ public class SwaggerConfig {
         return new OpenAPI()
                 .info(apiInfo())
                 .servers(List.of(
+                        // PRIMARY: API Gateway server (for frontend integration)
                         new Server()
-                                .url("http://localhost:" + serverPort)
-                                .description("Local Development Server"),
+                                .url("http://localhost:" + gatewayPort)
+                                .description("API Gateway"),
+                        // PRODUCTION: Production server
                         new Server()
                                 .url("https://api.fundquest.com")
                                 .description("Production Server")

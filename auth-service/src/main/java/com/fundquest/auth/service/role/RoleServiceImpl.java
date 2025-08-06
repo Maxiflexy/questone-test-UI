@@ -1,7 +1,9 @@
 package com.fundquest.auth.service.role;
 
+import com.fundquest.auth.dto.response.RoleResponse;
 import com.fundquest.auth.entity.Role;
 import com.fundquest.auth.repository.RoleRepository;
+import com.fundquest.auth.util.RoleMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import java.util.Optional;
 public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;
+    private final RoleMapper roleMapper;
 
     @Override
     public Optional<Role> findByName(String name) {
@@ -46,12 +49,16 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public List<Role> findAll() {
-        return roleRepository.findAll();
+    public List<RoleResponse> findAll() {
+        List<Role> roles = roleRepository.findAll();
+        return roleMapper.toRoleResponseList(roles);
     }
 
     @Override
-    public Optional<Role> findById(Long id) {
-        return roleRepository.findById(id);
+    public RoleResponse findById(Long roleId) {
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Role not found with ID: " + roleId));;
+
+        return roleMapper.toRoleResponse(role);
     }
 }

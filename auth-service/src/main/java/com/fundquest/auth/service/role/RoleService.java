@@ -1,5 +1,6 @@
 package com.fundquest.auth.service.role;
 
+import com.fundquest.auth.dto.response.RoleResponse;
 import com.fundquest.auth.entity.Role;
 
 import java.util.List;
@@ -39,12 +40,12 @@ public interface RoleService {
      * Get all roles
      * @return list of all roles
      */
-    List<Role> findAll();
+    List<RoleResponse> findAll();
 
     /**
      * Find role by ID
      * @param id role ID
      * @return optional role
      */
-    Optional<Role> findById(Long id);
+    RoleResponse findById(Long id);
 }

@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import static com.fundquest.auth.config.swagger.SwaggerConstants.*;
 import static com.fundquest.auth.constants.AppConstants.ROLE_ENDPOINT;
 
 @RestController
@@ -33,20 +34,20 @@ import static com.fundquest.auth.constants.AppConstants.ROLE_ENDPOINT;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(
-        name = SwaggerConstants.ROLE_TAG,
-        description = SwaggerConstants.ROLE_TAG_DESCRIPTION
+        name = ROLE_TAG,
+        description = ROLE_TAG_DESCRIPTION
 )
 public class RoleController {
 
     private final RoleService roleService;
-    private final RoleMapper roleMapper;
+
 
     @GetMapping
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Operation(
             summary = SwaggerConstants.Role.GET_ALL_SUMMARY,
             description = SwaggerConstants.Role.GET_ALL_DESCRIPTION,
-            tags = {SwaggerConstants.ROLE_TAG},
+            tags = {ROLE_TAG},
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
@@ -65,81 +66,15 @@ public class RoleController {
             )
     })
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getAllRoles() {
-        log.info("Received request to fetch all roles");
-
-        List<Role> roles = roleService.findAll();
-        List<RoleResponse> roleResponses = roleMapper.toRoleResponseList(roles);
-
-        log.info("Successfully retrieved {} roles", roleResponses.size());
-
-        return ResponseEntity.ok(ApiResponse.success(roleResponses));
+        return ResponseEntity.ok(ApiResponse.success(roleService.findAll()));
     }
-
-//    @GetMapping("/active")
-//    @PreAuthorize("hasAuthority('VIEW_ADMIN') or hasRole('SUPER_ADMIN')")
-//    @Operation(
-//            summary = SwaggerConstants.Role.GET_ACTIVE_SUMMARY,
-//            description = SwaggerConstants.Role.GET_ACTIVE_DESCRIPTION,
-//            tags = {SwaggerConstants.ROLE_TAG},
-//            security = @SecurityRequirement(name = "bearerAuth")
-//    )
-//    @ApiResponses(value = {
-//            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-//                    responseCode = "200",
-//                    description = "Active roles retrieved successfully",
-//                    content = @Content(
-//                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-//                            schema = @Schema(implementation = ApiResponse.class),
-//                            examples = @ExampleObject(
-//                                    name = "Active Roles",
-//                                    value = SwaggerConstants.Role.ROLES_RESPONSE_EXAMPLE,
-//                                    description = "List of currently active roles available for user assignment"
-//                            )
-//                    )
-//            ),
-//            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-//                    responseCode = "401",
-//                    description = "Unauthorized - Invalid or missing authentication token",
-//                    content = @Content(
-//                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-//                            schema = @Schema(implementation = ApiResponse.class),
-//                            examples = @ExampleObject(
-//                                    name = "Authentication Required",
-//                                    value = SwaggerConstants.UNAUTHORIZED_RESPONSE
-//                            )
-//                    )
-//            ),
-//            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-//                    responseCode = "403",
-//                    description = "Forbidden - VIEW_ADMIN permission or SUPER_ADMIN role required",
-//                    content = @Content(
-//                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-//                            schema = @Schema(implementation = ApiResponse.class),
-//                            examples = @ExampleObject(
-//                                    name = "Insufficient Permissions",
-//                                    value = SwaggerConstants.FORBIDDEN_RESPONSE,
-//                                    description = "User needs VIEW_ADMIN permission or SUPER_ADMIN role"
-//                            )
-//                    )
-//            )
-//    })
-//    public ResponseEntity<ApiResponse<List<RoleResponse>>> getActiveRoles() {
-//        log.info("Received request to fetch active roles");
-//
-//        List<Role> roles = roleService.findAllActive();
-//        List<RoleResponse> roleResponses = roleMapper.toRoleResponseList(roles);
-//
-//        log.info("Successfully retrieved {} active roles", roleResponses.size());
-//
-//        return ResponseEntity.ok(ApiResponse.success(roleResponses));
-//    }
 
     @GetMapping("/{roleId}")
     @PreAuthorize("hasAuthority('VIEW_ADMIN') or hasRole('SUPER_ADMIN')")
     @Operation(
             summary = SwaggerConstants.Role.GET_BY_ID_SUMMARY,
             description = SwaggerConstants.Role.GET_BY_ID_DESCRIPTION,
-            tags = {SwaggerConstants.ROLE_TAG},
+            tags = {ROLE_TAG},
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses(value = {
@@ -173,15 +108,8 @@ public class RoleController {
                     schema = @Schema(type = "integer", format = "int64", minimum = "1")
             )
             @PathVariable Long roleId) {
-        log.info("Received request to fetch role with ID: {}", roleId);
 
-        Role role = roleService.findById(roleId)
-                .orElseThrow(() -> new RuntimeException("Role not found with ID: " + roleId));
 
-        RoleResponse roleResponse = roleMapper.toRoleResponse(role);
-
-        log.info("Successfully retrieved role: {}", role.getName());
-
-        return ResponseEntity.ok(ApiResponse.success(roleResponse));
+        return ResponseEntity.ok(ApiResponse.success(roleService.findById(roleId)));
     }
 }

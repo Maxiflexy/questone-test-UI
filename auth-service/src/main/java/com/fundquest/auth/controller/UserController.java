@@ -86,7 +86,8 @@ public class UserController {
     }
 
     @GetMapping("/test")
-    //@PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    //@PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = SwaggerConstants.User.TEST_SUPER_ADMIN_SUMMARY,
             description = SwaggerConstants.User.TEST_SUPER_ADMIN_DESCRIPTION,

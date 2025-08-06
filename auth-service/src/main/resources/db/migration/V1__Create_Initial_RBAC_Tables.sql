@@ -70,24 +70,27 @@ CREATE INDEX idx_user_permission_permission_id ON user_permission_tbl(permission
 -- Insert default permissions
 INSERT INTO permission_tbl (name, description, category) VALUES
 -- Admin Management Permissions
-('INVITE_ADMIN', 'Invite Admin', 'ADMIN_MANAGEMENT'),
-('VIEW_OTHER_ADMIN_USERS', 'View other Admin Users', 'ADMIN_MANAGEMENT'),
-('EDIT_ADMIN_PROFILE', 'Edit an Admin Profile', 'ADMIN_MANAGEMENT'),
-('VIEW_ADMIN', 'View Admin', 'ADMIN_MANAGEMENT'),
-('ASSIGN_AND_UNASSIGN', 'Assign and unassign', 'ADMIN_MANAGEMENT'),
-('DISABLE_ENABLE_ADMIN', 'Disable and enable an Admin', 'ADMIN_MANAGEMENT'),
-('APPROVE_DECLINE_ADMIN_REQUEST', 'Approve or decline an Admin request', 'ADMIN_MANAGEMENT'),
+('INVITE_ADMIN', 'Invite a new admin user to the system', 'ADMIN_MANAGEMENT'),
+('VIEW_OTHER_ADMIN_USERS', 'View profiles and details of other admin users', 'ADMIN_MANAGEMENT'),
+('VIEW_ADMIN_PERMISSIONS', 'View permissions assigned to admin users', 'ADMIN_MANAGEMENT'),
+('INITIATE_PERMISSION_ASSIGNMENT', 'Initiate requests to assign or unassign permissions to/from users', 'ADMIN_MANAGEMENT'),
+('APPROVE_PERMISSION_ASSIGNMENT', 'Review and approve permission assignment and unassignment requests', 'ADMIN_MANAGEMENT'),
+('INITIATE_ADMIN_STATUS_CHANGE', 'Initiate requests to enable or disable admin accounts', 'ADMIN_MANAGEMENT'),
+('APPROVE_ADMIN_STATUS_CHANGE', 'Review and approve requests to enable or disable admin accounts', 'ADMIN_MANAGEMENT'),
 
 -- Customer Management Permissions
-('VIEW_CUSTOMERS', 'View Customers', 'CUSTOMER_MANAGEMENT'),
-('EDIT_CUSTOMER_PROFILE', 'Edit a Customer profile', 'CUSTOMER_MANAGEMENT'),
-('RESET_CUSTOMER_PASSWORD', 'Reset a customer''s password', 'CUSTOMER_MANAGEMENT'),
-('DISABLE_ENABLE_CUSTOMER', 'Disable and enable a customer', 'CUSTOMER_MANAGEMENT');
+('VIEW_CUSTOMERS', 'View customer profiles and account information', 'CUSTOMER_MANAGEMENT'),
+('INITIATE_CUSTOMER_PROFILE_EDIT', 'Initiate requests to edit customer profile information', 'CUSTOMER_MANAGEMENT'),
+('APPROVE_CUSTOMER_PROFILE_EDIT', 'Review and approve customer profile edit requests', 'CUSTOMER_MANAGEMENT'),
+('INITIATE_CUSTOMER_PASSWORD_RESET', 'Initiate customer password reset requests', 'CUSTOMER_MANAGEMENT'),
+('APPROVE_CUSTOMER_PASSWORD_RESET', 'Review and approve customer password reset requests', 'CUSTOMER_MANAGEMENT'),
+('INITIATE_CUSTOMER_STATUS_CHANGE', 'Initiate requests to disable or enable customer accounts', 'CUSTOMER_MANAGEMENT'),
+('APPROVE_CUSTOMER_STATUS_CHANGE', 'Review and approve customer account disable/enable requests', 'CUSTOMER_MANAGEMENT');
 
 -- Insert default roles
 INSERT INTO role_tbl (name, description, level) VALUES
-('SUPER_ADMIN', 'Super Administrator', 1),
-('ADMIN', 'Administrator', 2);
+('SUPER_ADMIN', 'Super Administrator with full system access', 1),
+('ADMIN', 'Administrator with delegated permissions', 2);
 
 -- Insert default super admin user - FIXED: Generate UUID-like string for ID
 INSERT INTO user_tbl (id, email, name, role_id, is_invited, is_microsoft_verified)

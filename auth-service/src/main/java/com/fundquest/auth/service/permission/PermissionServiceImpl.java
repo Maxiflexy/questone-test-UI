@@ -1,7 +1,9 @@
 package com.fundquest.auth.service.permission;
 
+import com.fundquest.auth.dto.response.PermissionResponse;
 import com.fundquest.auth.entity.Permission;
 import com.fundquest.auth.repository.PermissionRepository;
+import com.fundquest.auth.util.PermissionMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import java.util.Set;
 public class PermissionServiceImpl implements PermissionService {
 
     private final PermissionRepository permissionRepository;
+    private final PermissionMapper permissionMapper;
 
     @Override
     public Optional<Permission> findByName(String name) {
@@ -76,14 +79,21 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public List<Permission> findAll() {
-        log.debug("Finding all permissions");
-        return permissionRepository.findAll();
+    public List<PermissionResponse> findAll() {
+        List<Permission> permissions = permissionRepository.findAll();
+        return permissionMapper.toPermissionResponseList(permissions);
     }
 
     @Override
-    public Optional<Permission> findById(Long id) {
-        log.debug("Finding permission by id: {}", id);
-        return permissionRepository.findById(id);
+    public PermissionResponse findById(Long permissionId) {
+
+        Permission permission = permissionRepository.findById(permissionId)
+                .orElseThrow(() -> new RuntimeException("Permission not found with ID: " + permissionId));;
+
+        PermissionResponse permissionResponse = permissionMapper.toPermissionResponse(permission);
+
+        log.info("Successfully retrieved permission: {}", permission.getName());
+
+        return permissionResponse;
     }
 }
