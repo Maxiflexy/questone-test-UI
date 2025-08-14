@@ -126,3 +126,19 @@ COMMENT ON COLUMN user_tbl.is_microsoft_verified IS 'Whether user has completed 
 COMMENT ON COLUMN user_tbl.microsoft_id IS 'Microsoft OID from OAuth token';
 COMMENT ON COLUMN permission_tbl.category IS 'Groups permissions by functional area';
 COMMENT ON COLUMN role_tbl.level IS 'Hierarchical level - lower numbers = higher authority';
+
+
+ALTER TABLE user_tbl ADD COLUMN phone_number VARCHAR(20);
+
+-- Add last_modified_by column
+ALTER TABLE user_tbl ADD COLUMN last_modified_by VARCHAR(255);
+
+-- Add index on phone_number for potential future searches
+CREATE INDEX idx_user_phone_number ON user_tbl(phone_number);
+
+-- Add index on last_modified_by for audit purposes
+CREATE INDEX idx_user_last_modified_by ON user_tbl(last_modified_by);
+
+-- Add comment for documentation
+COMMENT ON COLUMN user_tbl.phone_number IS 'User phone number for contact purposes';
+COMMENT ON COLUMN user_tbl.last_modified_by IS 'Email of the user who last modified this record';

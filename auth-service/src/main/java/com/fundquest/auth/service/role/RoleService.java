@@ -48,4 +48,12 @@ public interface RoleService {
      * @return optional role
      */
     RoleResponse findById(Long id);
+
+    /**
+     * Find role entity by ID
+     * @param id role ID
+     * @return role entity
+     * @throws RuntimeException if role not found
+     */
+    Role findEntityById(Long id);
 }

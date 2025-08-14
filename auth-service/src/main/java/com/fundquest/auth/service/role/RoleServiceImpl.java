@@ -61,4 +61,15 @@ public class RoleServiceImpl implements RoleService {
 
         return roleMapper.toRoleResponse(role);
     }
+
+    @Override
+    public Role findEntityById(Long roleId) {
+        log.debug("Finding role entity by ID: {}", roleId);
+
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Role not found with ID: " + roleId));
+
+        log.debug("Found role entity: {}", role.getName());
+        return role;
+    }
 }

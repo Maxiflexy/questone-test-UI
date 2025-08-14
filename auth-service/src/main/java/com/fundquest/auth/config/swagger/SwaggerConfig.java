@@ -21,6 +21,16 @@ public class SwaggerConfig {
     @Value("${api.gateway.port:8080}")
     private String gatewayPort;
 
+    // Server configuration for dynamic deployment
+    @Value("${server.external.host:91.134.107.175}")
+    private String externalHost;
+
+    @Value("${server.external.port:8080}")
+    private String externalPort;
+
+    @Value("${server.context.path:/auth}")
+    private String contextPath;
+
     private static final String BEARER_AUTH = "bearerAuth";
 
     @Bean
@@ -28,10 +38,21 @@ public class SwaggerConfig {
         return new OpenAPI()
                 .info(apiInfo())
                 .servers(List.of(
-                        // PRIMARY: API Gateway server (for frontend integration)
+                        // CURRENT DEPLOYMENT: Your server IP with context path
+                        new Server()
+                                .url("http://" + externalHost + ":" + externalPort)
+                                .description("Current Deployment Server"),
+
+                        // LOCAL GATEWAY: API Gateway server (for local development)
                         new Server()
                                 .url("http://localhost:" + gatewayPort)
-                                .description("API Gateway"),
+                                .description("Local API Gateway"),
+
+                        // LOCAL DIRECT: Direct auth service (for local development)
+                        new Server()
+                                .url("http://localhost:8010")
+                                .description("Local Auth Service Direct"),
+
                         // PRODUCTION: Production server
                         new Server()
                                 .url("https://api.fundquest.com")
@@ -51,14 +72,6 @@ public class SwaggerConfig {
                         The FundQuest Authentication Service provides secure Microsoft OAuth2-based authentication 
                         and authorization for the FundQuest platform. This service manages user authentication, 
                         role-based access control (RBAC), and permission management.
-                        
-                        ## Key Features
-                        
-                        - **Microsoft OAuth2 Integration**: Secure authentication using Microsoft Azure AD
-                        - **JWT Token Management**: Access and refresh token handling with secure HTTP-only cookies
-                        - **Role-Based Access Control**: Flexible RBAC system with roles and granular permissions
-                        - **User Management**: User invitation system and profile management
-                        - **Permission Management**: Fine-grained permission control for different operations
                         """)
                 .version("1.0.1")
                 .contact(new Contact()

@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -76,6 +77,36 @@ public class PermissionServiceImpl implements PermissionService {
 
         log.debug("Found {} permissions out of {} requested", permissions.size(), permissionNames.size());
         return permissions;
+    }
+
+    public Set<Permission> findByIds(List<Long> permissionIds) {
+        log.debug("Finding permissions by IDs: {}", permissionIds);
+
+        if (permissionIds == null || permissionIds.isEmpty()) {
+            return new HashSet<>();
+        }
+
+        List<Permission> permissions = permissionRepository.findAllById(permissionIds);
+        Set<Permission> permissionSet = new HashSet<>(permissions);
+
+        log.debug("Found {} permissions out of {} requested IDs", permissionSet.size(), permissionIds.size());
+        return permissionSet;
+    }
+
+    @Override
+    public boolean existsAllByIds(List<Long> permissionIds) {
+        log.debug("Checking if all permission IDs exist: {}", permissionIds);
+
+        if (permissionIds == null || permissionIds.isEmpty()) {
+            return true;
+        }
+
+        // Use the active permissions count for better validation
+        long existingCount = permissionRepository.countByIdInAndIsActiveTrue(permissionIds);
+        boolean allExist = existingCount == permissionIds.size();
+
+        log.debug("Checked {} permission IDs, {} active exist", permissionIds.size(), existingCount);
+        return allExist;
     }
 
     @Override

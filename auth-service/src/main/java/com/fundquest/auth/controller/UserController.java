@@ -5,6 +5,7 @@ import com.fundquest.auth.dto.response.ApiResponse;
 import com.fundquest.auth.dto.response.AuthUserData;
 import com.fundquest.auth.entity.User;
 import com.fundquest.auth.service.UserService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -85,9 +86,9 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(profileResponse));
     }
 
+    @Hidden
     @GetMapping("/test")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    //@PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = SwaggerConstants.User.TEST_SUPER_ADMIN_SUMMARY,
             description = SwaggerConstants.User.TEST_SUPER_ADMIN_DESCRIPTION,

@@ -39,6 +39,12 @@ public class User extends BaseEntity {
     @Column(name = "preferred_username")
     private String preferredUsername;
 
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "last_modified_by")
+    private String lastModifiedBy;
+
     @Column(name = "is_invited")
     @Builder.Default
     private Boolean isInvited = false;

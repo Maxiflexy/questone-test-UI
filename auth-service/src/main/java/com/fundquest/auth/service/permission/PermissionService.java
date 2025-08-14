@@ -51,6 +51,13 @@ public interface PermissionService {
     Set<Permission> findByNames(Set<String> permissionNames);
 
     /**
+     * Find permissions by IDs
+     * @param permissionIds list of permission IDs
+     * @return set of permissions
+     */
+    Set<Permission> findByIds(List<Long> permissionIds);
+
+    /**
      * Get all permissions
      * @return list of all permissions
      */
@@ -62,4 +69,11 @@ public interface PermissionService {
      * @return optional permission
      */
     PermissionResponse findById(Long id);
+
+    /**
+     * Check if all permission IDs exist
+     * @param permissionIds list of permission IDs to validate
+     * @return true if all exist, false otherwise
+     */
+    boolean existsAllByIds(List<Long> permissionIds);
 }

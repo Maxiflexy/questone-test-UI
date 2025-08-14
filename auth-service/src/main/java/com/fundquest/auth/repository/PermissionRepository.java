@@ -19,4 +19,11 @@ public interface PermissionRepository extends JpaRepository<Permission, Long> {
     List<Permission> findByCategoryAndIsActiveTrue(String category);
 
     boolean existsByName(String name);
+
+    /**
+     * Check if all permissions with given IDs exist and are active
+     * @param ids list of permission IDs
+     * @return count of active permissions with given IDs
+     */
+    long countByIdInAndIsActiveTrue(List<Long> ids);
 }
