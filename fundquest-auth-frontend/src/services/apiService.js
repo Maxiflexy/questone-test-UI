@@ -11,6 +11,22 @@ const apiClient = axios.create({
   },
 });
 
+// Track if we're currently refreshing to prevent multiple refresh calls
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
@@ -25,17 +41,80 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle unauthorized requests
+// Response interceptor to handle unauthorized requests and automatic token refresh
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      // Clear token and redirect to login
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('tokenType');
-      localStorage.removeItem('expiresIn');
-      window.location.href = '/';
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      // Mark this request as being retried to prevent infinite loops
+      originalRequest._retry = true;
+
+      if (isRefreshing) {
+        // If we're already refreshing, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return apiClient(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
+      }
+
+      isRefreshing = true;
+
+      try {
+        console.log('Access token expired, attempting to refresh...');
+
+        // Attempt to refresh the token
+        const refreshResponse = await apiClient.post('/api/v1/auth/refresh');
+
+        console.log('Token refresh successful:', refreshResponse.data);
+
+        if (refreshResponse.data?.success && refreshResponse.data?.data) {
+          const { accessToken, expiresIn, tokenType } = refreshResponse.data.data;
+
+          // Store new access token in localStorage
+          localStorage.setItem('accessToken', accessToken);
+          localStorage.setItem('tokenType', tokenType);
+          localStorage.setItem('expiresIn', expiresIn.toString());
+
+          console.log('New access token stored successfully');
+
+          // Update the authorization header for the failed request
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+
+          // Process the queue with the new token
+          processQueue(null, accessToken);
+
+          // Retry the original request
+          return apiClient(originalRequest);
+        } else {
+          throw new Error('Invalid refresh response format');
+        }
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
+
+        // Process the queue with the error
+        processQueue(refreshError, null);
+
+        // Clear tokens and redirect to login
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('tokenType');
+        localStorage.removeItem('expiresIn');
+
+        // Redirect to login page
+        window.location.href = '/';
+
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
+
+    // For non-401 errors or if retry failed, just reject
     return Promise.reject(error);
   }
 );
@@ -65,7 +144,7 @@ export const authService = {
           authCode: authCode
         });
 
-        // ADDED: Enhanced console logging for verify endpoint response
+        // Enhanced console logging for verify endpoint response
         console.log('=== VERIFY ENDPOINT RESPONSE ===');
         console.log('Full Response:', response);
         console.log('Response Data:', response.data);
@@ -79,7 +158,7 @@ export const authService = {
             expiresIn: response.data.data.expiresIn
           });
 
-          // ADDED: Log user data from verify endpoint
+          // Log user data from verify endpoint
           if (response.data.data.user) {
             console.log('User Data from Verify Endpoint:', response.data.data.user);
           }
@@ -134,14 +213,14 @@ export const authService = {
     return requestPromise;
   },
 
+  // Manual refresh token function (now mainly for internal use by interceptor)
   refreshToken: async () => {
     try {
-      console.log('Refreshing access token...');
+      console.log('Manually refreshing access token...');
 
-      // NEW: Added refresh token endpoint
       const response = await apiClient.post('/api/v1/auth/refresh');
 
-      console.log('Refresh token response:', response.data);
+      console.log('Manual refresh token response:', response.data);
 
       if (response.data?.success && response.data?.data) {
         const { accessToken, expiresIn, tokenType } = response.data.data;
@@ -161,7 +240,7 @@ export const authService = {
 
       throw new Error('Invalid refresh response format');
     } catch (error) {
-      console.error('Token refresh failed:', error);
+      console.error('Manual token refresh failed:', error);
 
       let errorMessage = 'Token refresh failed';
       if (error.response?.data?.error?.message) {
@@ -187,9 +266,10 @@ export const authService = {
     try {
       console.log('Logging out...');
 
+      // Call backend logout endpoint to clear refresh token cookie
       await apiClient.post('/api/v1/auth/logout');
 
-      console.log('Backend logout successful');
+      console.log('Backend logout successful - cookies cleared');
     } catch (error) {
       console.error('Backend logout error:', error);
       // Continue with local cleanup even if backend call fails

@@ -1,5 +1,9 @@
 package com.fundquest.auth.backoffice.modules.user.controller;
 
+import com.fundquest.auth.backoffice.modules.user.dto.request.InviteUserRequest;
+import com.fundquest.auth.backoffice.modules.user.dto.request.UpdateUserPermissionsRequest;
+import com.fundquest.auth.backoffice.modules.user.dto.response.UserDetailResponse;
+import com.fundquest.auth.backoffice.modules.user.service.invite.UserInvitationService;
 import com.fundquest.auth.dto.response.ApiResponse;
 import com.fundquest.auth.backoffice.modules.user.dto.response.UserPageResponse;
 import com.fundquest.auth.backoffice.modules.user.service.management.UserManagementService;
@@ -8,26 +12,56 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import static com.fundquest.auth.constants.AppConstants.AUTH_BASE_PATH;
 
 @RestController
-@RequestMapping("/api/v1/auth/user")
+@RequestMapping(AUTH_BASE_PATH + "/user")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(
         name = "User Management",
-        description = "Endpoints for managing and retrieving user information with pagination, search, and filtering"
+        description = "Endpoints for inviting, managing and retrieving user information with pagination, search, and filtering"
 )
 public class UserManagementController {
 
     private final UserManagementService userManagementService;
+    private final UserInvitationService userInvitationService;
+
+    @PostMapping("/invite")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @Operation(
+            summary = "Invite New User",
+            description = "Invite a new user to the system with specified role and permissions",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<ApiResponse<String>> inviteUser(
+            @Parameter(
+                    description = "User invitation request with email, role ID, and permission IDs",
+                    required = true,
+                    schema = @Schema(implementation = InviteUserRequest.class),
+                    example = """
+                    {
+                      "email": "newuser@fundquestnigeria.com",
+                      "roleId": 2,
+                      "permissionIds": [1, 8]
+                    }
+                    """
+            )
+            @Valid @RequestBody InviteUserRequest request) {
+
+        userInvitationService.inviteUser(request);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("User invitation sent successfully"));
+    }
 
     @GetMapping("/list")
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('VIEW_OTHER_ADMIN_USERS')")
@@ -118,5 +152,51 @@ public class UserManagementController {
             @RequestParam(defaultValue = "8") int size) {
 
         return ResponseEntity.ok(ApiResponse.success(userManagementService.filterUsersByStatus(isActive, page, size)));
+    }
+
+    @GetMapping("/details")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('VIEW_OTHER_ADMIN_USERS')")
+    @Operation(
+            summary = "Get User Details by Email",
+            description = "Retrieve detailed information for a specific user including their permissions and role",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<ApiResponse<UserDetailResponse>> getUserByEmail(
+            @Parameter(
+                    description = "Email address of the user to retrieve",
+                    required = true,
+                    example = "john.doe@fundquestnigeria.com",
+                    schema = @Schema(type = "string", format = "email")
+            )
+            @RequestParam String email) {
+
+        return ResponseEntity.ok(ApiResponse.success(userManagementService.getUserByEmail(email)));
+    }
+
+    @PutMapping("/permissions")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('INITIATE_PERMISSION_ASSIGNMENT')")
+    @Operation(
+            summary = "Update User Permissions",
+            description = "Update the permissions assigned to a specific user. This will replace all existing permissions with the new ones provided.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<ApiResponse<UserDetailResponse>> updateUserPermissions(
+            @Parameter(
+                    description = "Email address of the user whose permissions are to be updated",
+                    required = true,
+                    example = "john.doe@fundquestnigeria.com",
+                    schema = @Schema(type = "string", format = "email")
+            )
+            @RequestParam String email,
+
+            @Parameter(
+                    description = "List of permission names to assign to the user",
+                    required = true,
+                    schema = @Schema(implementation = UpdateUserPermissionsRequest.class)
+            )
+            @Valid @RequestBody UpdateUserPermissionsRequest request) {
+
+        UserDetailResponse response = userManagementService.updateUserPermissions(email, request.getPermissionNames());
+        return ResponseEntity.ok(ApiResponse.success(response, "User permissions updated successfully"));
     }
 }

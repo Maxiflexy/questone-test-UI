@@ -1,6 +1,9 @@
 package com.fundquest.auth.backoffice.modules.user.service.management;
 
+import com.fundquest.auth.backoffice.modules.user.dto.response.UserDetailResponse;
 import com.fundquest.auth.backoffice.modules.user.dto.response.UserPageResponse;
+
+import java.util.List;
 
 public interface UserManagementService {
 
@@ -43,4 +46,22 @@ public interface UserManagementService {
      * @return UserPageResponse with filtered users and pagination info
      */
     UserPageResponse filterUsers(String name, Boolean isActive, int page, int size);
+
+    /**
+     * Get single user by email with detailed information including permissions and role
+     *
+     * @param email user email
+     * @return UserDetailResponse with user details, permissions, and role info
+     */
+    UserDetailResponse getUserByEmail(String email);
+
+    /**
+     * Update user permissions
+     *
+     * @param email user email
+     * @param permissionNames list of permission names to assign to the user
+     * @return UserDetailResponse with updated user information
+     */
+    UserDetailResponse updateUserPermissions(String email, List<String> permissionNames);
+
 }

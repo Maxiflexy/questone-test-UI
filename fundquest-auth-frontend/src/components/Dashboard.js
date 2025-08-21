@@ -7,6 +7,7 @@ const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -47,13 +48,24 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     try {
-      setLoading(true);
+      setIsLoggingOut(true);
+      console.log('Starting logout process...');
+
+      // Call the logout service which will:
+      // 1. Call backend to clear refresh token cookie
+      // 2. Clear localStorage tokens
       await authService.logout();
+
+      console.log('Logout completed successfully');
+
+      // Navigate to login page
       navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if logout fails, redirect to login
+      // Even if logout fails, redirect to login for security
       navigate('/');
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -107,8 +119,13 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h1>Welcome to FundQuest</h1>
-        <button onClick={handleLogout} className="logout-button" disabled={loading}>
-          {loading ? 'Logging out...' : 'Logout'}
+        <button
+          onClick={handleLogout}
+          className="logout-button"
+          disabled={isLoggingOut}
+          style={isLoggingOut ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+        >
+          {isLoggingOut ? 'Logging out...' : 'Logout'}
         </button>
       </div>
 
@@ -188,9 +205,17 @@ const Dashboard = () => {
               className="action-button"
               onClick={() => window.location.reload()}
               style={{ cursor: 'pointer' }}
+              disabled={isLoggingOut}
             >
               Refresh Profile
             </button>
+
+            <div className="action-button" style={{ cursor: 'default', backgroundColor: '#e8f5e8', border: '1px solid #c3e6c3' }}>
+              <strong>Token Status:</strong><br />
+              <span style={{ fontSize: '12px', color: '#155724' }}>
+                Auto-refresh enabled ✓
+              </span>
+            </div>
           </div>
         </div>
       </div>
