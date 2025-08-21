@@ -2,6 +2,7 @@ package com.fundquest.auth.backoffice.modules.user.controller;
 
 import com.fundquest.auth.backoffice.modules.user.dto.request.InviteUserRequest;
 import com.fundquest.auth.backoffice.modules.user.dto.request.UpdateUserPermissionsRequest;
+import com.fundquest.auth.backoffice.modules.user.dto.request.UpdateUserStatusRequest;
 import com.fundquest.auth.backoffice.modules.user.dto.response.UserDetailResponse;
 import com.fundquest.auth.backoffice.modules.user.service.invite.UserInvitationService;
 import com.fundquest.auth.dto.response.ApiResponse;
@@ -198,5 +199,39 @@ public class UserManagementController {
 
         UserDetailResponse response = userManagementService.updateUserPermissions(email, request.getPermissionNames());
         return ResponseEntity.ok(ApiResponse.success(response, "User permissions updated successfully"));
+    }
+
+    @PutMapping("/status")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('INITIATE_ADMIN_STATUS_CHANGE')")
+    @Operation(
+            summary = "Update User Status (Activate/Deactivate)",
+            description = "Activate or deactivate a user account. Deactivated users cannot access the system. Users cannot deactivate their own account.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<ApiResponse<UserDetailResponse>> updateUserStatus(
+            @Parameter(
+                    description = "Email address of the user whose status is to be updated",
+                    required = true,
+                    example = "john.doe@fundquestnigeria.com",
+                    schema = @Schema(type = "string", format = "email")
+            )
+            @RequestParam String email,
+
+            @Parameter(
+                    description = "User status update request. Set isActive to true to activate user, false to deactivate.",
+                    required = true,
+                    schema = @Schema(implementation = UpdateUserStatusRequest.class),
+                    example = """
+                    {
+                      "isActive": true
+                    }
+                    """
+            )
+            @Valid @RequestBody UpdateUserStatusRequest request) {
+
+        return ResponseEntity.ok(ApiResponse.success(
+                userManagementService.updateUserStatus(email, request.getIsActive()),
+                request.getIsActive() ? "User activated successfully" : "User deactivated successfully")
+        );
     }
 }

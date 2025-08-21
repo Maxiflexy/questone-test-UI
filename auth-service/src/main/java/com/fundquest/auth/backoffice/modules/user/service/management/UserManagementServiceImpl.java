@@ -116,6 +116,27 @@ public class UserManagementServiceImpl implements UserManagementService {
         return userDetailMapper.toUserDetailResponse(savedUser);
     }
 
+    @Override
+    @Transactional
+    public UserDetailResponse updateUserStatus(String email, boolean isActive) {
+        String modifiedBy = securityContextService.getAuthenticatedUserEmail();
+        User user = userRepository.findByEmailWithRoleAndPermissions(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        // Prevent deactivating the current authenticated user
+        if (!isActive && email.equals(modifiedBy)) {
+            throw new IllegalArgumentException("You cannot deactivate your own account");
+        }
+
+        if (isActive) user.activate();
+        else user.deactivate();
+
+        user.setLastModifiedBy(modifiedBy);
+        User savedUser = userRepository.save(user);
+
+        return userDetailMapper.toUserDetailResponse(savedUser);
+    }
+
 
     /**
      * Create Pageable object with proper page conversion and size validation

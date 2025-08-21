@@ -64,4 +64,13 @@ public interface UserManagementService {
      */
     UserDetailResponse updateUserPermissions(String email, List<String> permissionNames);
 
+    /**
+     * Update user status (activate/deactivate)
+     *
+     * @param email user email
+     * @param isActive true to activate user, false to deactivate
+     * @return UserDetailResponse with updated user information
+     */
+    UserDetailResponse updateUserStatus(String email, boolean isActive);
+
 }
