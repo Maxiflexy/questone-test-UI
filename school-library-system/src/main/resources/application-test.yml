@@ -1,0 +1,15 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  datasource:
+    hikari:
+      maximum-pool-size: 3
+      connection-timeout: 50000
+      validation-timeout: 20000
+
+logging:
+  level:
+    com.zaxxer.hikari: WARN
+    org.hibernate.tool.schema: WARN
