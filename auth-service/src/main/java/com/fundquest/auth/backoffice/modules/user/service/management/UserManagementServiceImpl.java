@@ -1,5 +1,6 @@
 package com.fundquest.auth.backoffice.modules.user.service.management;
 
+import com.fundquest.auth.audit_trail.annotation.Auditable;
 import com.fundquest.auth.backoffice.modules.user.dto.response.UserDetailResponse;
 import com.fundquest.auth.backoffice.modules.user.mapper.UserDetailMapper;
 import com.fundquest.auth.entity.Permission;
@@ -20,6 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static com.fundquest.auth.audit_trail.entity.enums.ActionType.ACTIVATE;
+import static com.fundquest.auth.audit_trail.entity.enums.ActionType.ASSIGN_PERMISSION;
+import static com.fundquest.auth.audit_trail.entity.enums.ResourceType.USER;
 
 @Service
 @RequiredArgsConstructor
@@ -96,28 +101,36 @@ public class UserManagementServiceImpl implements UserManagementService {
 
     @Override
     @Transactional
+    @Auditable(
+            actionType = ASSIGN_PERMISSION,
+            description = "Permissions updated for user {0} - assigned {1} permissions",
+            resourceType = USER,
+            resourceIdExpression = "#result != null ? #result.email : #email",
+            resourceIdentifierExpression = "#email",
+            includeParameters = true
+    )
     public UserDetailResponse updateUserPermissions(String email, List<String> permissionNames) {
-        // Get the authenticated user who is making this change
         String modifiedBy = securityContextService.getAuthenticatedUserEmail();
-
-        // Find the user to update
         User user = userRepository.findByEmailWithRoleAndPermissions(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
 
-        // Validate permission names and get permission entities
         Set<Permission> newPermissions = validateAndGetPermissions(permissionNames);
-
-        // Update user permissions
         user.setPermissions(newPermissions);
         user.setLastModifiedBy(modifiedBy);
 
-        // Save the updated user
         User savedUser = userRepository.save(user);
         return userDetailMapper.toUserDetailResponse(savedUser);
     }
 
     @Override
     @Transactional
+    @Auditable(
+            actionType = ACTIVATE,
+            description = "User {0} was {1}",
+            resourceType = USER,
+            resourceIdExpression = "#result != null ? #result.email : #email",
+            resourceIdentifierExpression = "#email"
+    )
     public UserDetailResponse updateUserStatus(String email, boolean isActive) {
         String modifiedBy = securityContextService.getAuthenticatedUserEmail();
         User user = userRepository.findByEmailWithRoleAndPermissions(email)

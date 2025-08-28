@@ -2,6 +2,7 @@ package com.fundquest.auth.service.impl;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fundquest.auth.audit_trail.annotation.Auditable;
 import com.fundquest.auth.constants.AppConstants;
 import com.fundquest.auth.dto.request.VerifyMicrosoftTokenRequest;
 import com.fundquest.auth.dto.response.AuthResponse;
@@ -20,6 +21,9 @@ import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.fundquest.auth.audit_trail.entity.enums.ActionType.LOGIN;
+import static com.fundquest.auth.audit_trail.entity.enums.ActionType.LOGOUT;
+import static com.fundquest.auth.audit_trail.entity.enums.ResourceType.AUTHENTICATION;
 import static com.fundquest.auth.constants.AppConstants.USER_NOT_INVITED;
 
 
@@ -35,6 +39,14 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
 
     @Override
+    @Auditable(
+            actionType = LOGIN,
+            description = "User successfully authenticated via Microsoft OAuth",
+            resourceType = AUTHENTICATION,
+            resourceIdExpression = "#result != null ? #result.user.email : 'unknown'",
+            resourceIdentifierExpression = "#result != null ? #result.user.email : 'unknown'",
+            includeResult = true
+    )
     public AuthResponse verifyMicrosoftToken(VerifyMicrosoftTokenRequest request) {
         try {
             log.info("Starting Microsoft token verification");
@@ -82,6 +94,14 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Auditable(
+            actionType = LOGIN,
+            description = "Access token refreshed for authenticated user",
+            resourceType = AUTHENTICATION,
+            resourceIdExpression = "#result != null ? #result.user.email : 'unknown'",
+            resourceIdentifierExpression = "#result != null ? #result.user.email : 'unknown'",
+            includeResult = true
+    )
     public AuthResponse refreshAccessToken(String refreshToken) {
         log.info("Processing token refresh request");
 
@@ -105,6 +125,13 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Auditable(
+            actionType = LOGOUT,
+            description = "User logged out from the system",
+            resourceType = AUTHENTICATION,
+            resourceIdExpression = "#email",
+            resourceIdentifierExpression = "#email"
+    )
     public void logout(String email) {
         log.info("Processing logout for user: {}", email);
 

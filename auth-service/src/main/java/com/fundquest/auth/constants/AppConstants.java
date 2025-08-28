@@ -11,9 +11,10 @@ public final class AppConstants {
     public static final String MICROSOFT_VERIFY_ENDPOINT = "/microsoft/verify";
     public static final String REFRESH_TOKEN_ENDPOINT = "/refresh";
     public static final String LOGOUT_ENDPOINT = "/logout";
-    public static final String USER_PROFILE_ENDPOINT = "/api/v1/auth/user/profile";
+    public static final String USER_PROFILE_ENDPOINT = "/user/profile";
     public static final String PERMISSIONS_ENDPOINT = "/api/v1/auth/permissions";
-    public static final String ROLE_ENDPOINT = "/api/v1/auth/roles";
+    public static final String ROLE_ENDPOINT = "/roles";
+    public static final String AUDIT_ENDPOINT = "/audit";
 
     // JWT Constants
     public static final String JWT_HEADER_PREFIX = "Bearer ";

@@ -27,10 +27,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 import static com.fundquest.auth.config.swagger.SwaggerConstants.*;
+import static com.fundquest.auth.constants.AppConstants.AUTH_BASE_PATH;
 import static com.fundquest.auth.constants.AppConstants.ROLE_ENDPOINT;
 
 @RestController
-@RequestMapping(ROLE_ENDPOINT)
+@RequestMapping(AUTH_BASE_PATH + ROLE_ENDPOINT)
 @RequiredArgsConstructor
 @Slf4j
 @Tag(

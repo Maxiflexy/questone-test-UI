@@ -12,7 +12,29 @@ spring:
         max-interval: 2000
         multiplier: 1.1
 
+  # AOP Configuration for Audit Trail
+  aop:
+    auto: true
+    proxy-target-class: true
+
+
+  # Audit Trail Configuration
+  audit:
+    enabled: true
+    async: true
+    include-request-details: true
+    max-description-length: 1000
+    cleanup:
+      enabled: true
+      retention-days: 365 # Keep audit logs for 1 year
+
 management:
+  task:
+    execution:
+      pool:
+        core-size: 2
+        max-size: 5
+        queue-capacity: 100
   endpoints:
     web:
       exposure:

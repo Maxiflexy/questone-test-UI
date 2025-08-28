@@ -32,8 +32,12 @@ public class CorsConfig {
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfig = new CorsConfiguration();
 
-        // Parse allowed origins
-        List<String> origins = Arrays.asList(allowedOrigins.split(","));
+        // Parse allowed origins and remove duplicates
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .distinct()  // Remove duplicates
+                .toList();
+
         corsConfig.setAllowedOriginPatterns(origins);
 
         // Parse allowed methods

@@ -1,5 +1,6 @@
 package com.fundquest.auth.backoffice.modules.user.service.invite;
 
+import com.fundquest.auth.audit_trail.annotation.Auditable;
 import com.fundquest.auth.entity.Permission;
 import com.fundquest.auth.entity.Role;
 import com.fundquest.auth.entity.User;
@@ -19,6 +20,9 @@ import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.fundquest.auth.audit_trail.entity.enums.ActionType.INVITE;
+import static com.fundquest.auth.audit_trail.entity.enums.ResourceType.USER;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -34,24 +38,36 @@ public class UserInvitationServiceImpl implements UserInvitationService {
 
     @Override
     @Transactional
+    @Auditable(
+            actionType = INVITE,
+            description = "User with email {0} was invited to the system with role {1} and {2} permissions",
+            resourceType = USER,
+            resourceIdExpression = "#result != null ? #result.id : 'unknown'",
+            resourceIdentifierExpression = "#request.email",
+            includeParameters = true
+    )
     public void inviteUser(InviteUserRequest request) {
         String invitedByEmail = securityContextService.getAuthenticatedUserEmail();
         inviteUser(request, invitedByEmail);
     }
 
     @Transactional
+    @Auditable(
+            actionType = INVITE,
+            description = "User {0} was invited by {1} with role and permissions",
+            resourceType = USER,
+            resourceIdExpression = "#result != null ? #result.id : 'unknown'",
+            resourceIdentifierExpression = "#request.email"
+    )
     public void inviteUser(InviteUserRequest request, String invitedByEmail) {
         if (userService.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("User with email '" + request.getEmail() + "' already exists");
         }
 
-        // Validate and get entities - optimized to avoid duplicate lookups
         ValidationResult validationResult = validateAndGetEntities(request);
 
-        // Create user
         User user = createInvitedUser(request, validationResult.role(), validationResult.permissions(), invitedByEmail);
 
-        // Save user
         userRepository.save(user);
 
         try {

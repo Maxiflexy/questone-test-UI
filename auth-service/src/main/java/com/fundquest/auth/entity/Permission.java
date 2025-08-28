@@ -28,10 +28,11 @@ public class Permission extends BaseEntity {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "category")
-    private String category; // e.g., "ADMIN_MANAGEMENT", "CUSTOMER_MANAGEMENT"
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
-    public Permission(String name, String description, String category) {
+    public Permission(String name, String description, Category category) {
         this.name = name;
         this.description = description;
         this.category = category;

@@ -1,0 +1,6 @@
+package com.fundquest.auth.audit_trail.entity.enums;
+
+public enum ActionType {
+    CREATE, UPDATE, DELETE, ACTIVATE, DEACTIVATE, INVITE, LOGIN, LOGOUT,
+    ASSIGN_PERMISSION, REMOVE_PERMISSION, CHANGE_ROLE, RESET_PASSWORD, VERIFY
+}

@@ -25,10 +25,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import static com.fundquest.auth.constants.AppConstants.AUTH_BASE_PATH;
 import static com.fundquest.auth.constants.AppConstants.USER_PROFILE_ENDPOINT;
 
 @RestController
-@RequestMapping(USER_PROFILE_ENDPOINT)
+@RequestMapping(AUTH_BASE_PATH + USER_PROFILE_ENDPOINT)
 @RequiredArgsConstructor
 @Slf4j
 @Tag(
